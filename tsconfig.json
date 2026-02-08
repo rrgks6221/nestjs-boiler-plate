@@ -20,6 +20,13 @@
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": false,
     "strictBindCallApply": false,
+    "paths": {
+      "@src/*": ["./src/!(shared|common|modules)/*"],
+      "@module/*": ["./src/modules/*"],
+      "@common/*": ["./src/common/*"],
+      "@shared/*": ["./src/shared/*"],
+      "@core/*": ["./src/core/*"]
+    },
     "noFallthroughCasesInSwitch": false
   }
 }
