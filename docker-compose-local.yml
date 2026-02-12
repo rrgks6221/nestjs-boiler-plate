@@ -1,0 +1,26 @@
+networks:
+  backend_net:
+    name: nest_boiler_plate_default
+    driver: bridge
+
+services:
+  nest_boiler_plate_postgres:
+    container_name: nest_boiler_plate_postgres
+    networks:
+      - backend_net
+    image: postgres:16.1
+    user: root
+    volumes:
+      - nest_boiler_plate_backend_data:/data/postgres
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: local
+      POSTGRES_DB: nest_boiler_plate
+      PGDATA: /data/postgres
+      PGPORT: 5432
+    ports:
+      - 5432:5432
+
+volumes:
+  nest_boiler_plate_backend_data:
+    driver: local
