@@ -1,6 +1,5 @@
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface ICommand {}
+import { BaseCommand } from '@common/base/base.command';
 
-export interface ICommandHandler<TCommand extends ICommand, TResult> {
+export interface ICommandHandler<TCommand extends BaseCommand, TResult> {
   execute(command: TCommand): Promise<TResult>;
 }
