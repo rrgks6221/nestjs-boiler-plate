@@ -14,7 +14,7 @@ export interface IBaseMapper<
   Entity extends BaseEntity<unknown>,
   Raw extends { id: bigint },
 > extends BaseMapper {
-  toEntity(record: Raw): Entity;
+  toEntity(raw: Raw): Entity;
 
   toPersistence(entity: Entity): Raw;
 
