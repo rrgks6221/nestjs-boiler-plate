@@ -6,6 +6,10 @@ import {
   IUserRepository,
   USER_REPOSITORY,
 } from '@module/user/repositories/user/user.repository.interface';
+import {
+  IPasswordHasher,
+  PASSWORD_HASHER,
+} from '@module/user/services/password-hasher/password-hasher.interface';
 import { CreateUserWithUsernameCommand } from '@module/user/use-cases/create-user-with-username/create-user-with-username.command';
 
 import { ICommandHandler } from '@common/interfaces/command.interface';
@@ -18,6 +22,8 @@ export class CreateUserWithUsernameHandler implements ICommandHandler<
   constructor(
     @Inject(USER_REPOSITORY)
     private readonly userRepository: IUserRepository,
+    @Inject(PASSWORD_HASHER)
+    private readonly passwordHasher: IPasswordHasher,
   ) {}
 
   async execute(command: CreateUserWithUsernameCommand): Promise<User> {
@@ -31,7 +37,7 @@ export class CreateUserWithUsernameHandler implements ICommandHandler<
 
     const user = User.createWithUsername({
       username: command.username,
-      hashedPassword: command.password,
+      hashedPassword: await this.passwordHasher.hash(command.password),
     });
 
     await this.userRepository.insert(user);
