@@ -1,7 +1,7 @@
 import { BaseError } from '@common/base/base.error';
 
 export class UserUsernameAlreadyOccupiedError extends BaseError {
-  static CODE: string = 'User.USERNAME_ALREADY_OCCUPIED';
+  static CODE: string = 'USER.USERNAME_ALREADY_OCCUPIED';
 
   constructor(message?: string) {
     super(
