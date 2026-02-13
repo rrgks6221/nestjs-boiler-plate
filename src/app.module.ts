@@ -1,16 +1,16 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
 
 import { AuthModule } from '@module/auth/auth.module';
 import { UserModule } from '@module/user/user.module';
 
 import { ClsModuleFactory } from '@common/factories/cls-module.factory';
+import { ConfigModuleFactory } from '@common/factories/config-module.factory';
 
 import { PrismaModule } from '@shared/prisma/prisma.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
+    ConfigModuleFactory(),
     PrismaModule,
     ClsModuleFactory(),
     AuthModule,

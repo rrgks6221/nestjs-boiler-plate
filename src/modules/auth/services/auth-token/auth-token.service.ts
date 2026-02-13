@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 
 import { StringValue } from 'ms';
@@ -6,6 +7,8 @@ import { StringValue } from 'ms';
 import { AuthToken, AuthTokenType } from '@module/auth/entities/auth-token.vo';
 import { AuthTokens } from '@module/auth/entities/auth-tokens.vo';
 import { IAuthTokenService } from '@module/auth/services/auth-token/auth-token.service.interface';
+
+import { ENV_KEY } from '@common/factories/config-module.factory';
 
 /**
  * @todo 적절한 저장소를 통해 refresh token을 관리하세요.
@@ -15,19 +18,25 @@ export class AuthTokenService implements IAuthTokenService {
   constructor(
     @Inject(JwtService)
     private readonly jwtService: JwtService,
+    @Inject(ConfigService)
+    private readonly configService: ConfigService,
   ) {}
 
   createTokens(userId: string): AuthTokens {
     const accessToken = this.createToken(
       'access',
       userId,
-      process.env.ACCESS_TOKEN_EXPIRES_IN as StringValue,
+      this.configService.getOrThrow<StringValue>(
+        ENV_KEY.ACCESS_TOKEN_EXPIRES_IN,
+      ),
     );
 
     const refreshToken = this.createToken(
       'refresh',
       userId,
-      process.env.REFRESH_TOKEN_EXPIRES_IN as StringValue,
+      this.configService.getOrThrow<StringValue>(
+        ENV_KEY.REFRESH_TOKEN_EXPIRES_IN,
+      ),
     );
 
     return new AuthTokens({ accessToken, refreshToken });
