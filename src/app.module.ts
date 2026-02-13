@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
 
+import { ClsModuleFactory } from '@common/factories/cls-module.factory';
+
 @Module({
-  imports: [],
+  imports: [ClsModuleFactory()],
   controllers: [],
   providers: [],
 })
