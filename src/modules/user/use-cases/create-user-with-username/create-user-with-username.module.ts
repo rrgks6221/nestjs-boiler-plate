@@ -7,5 +7,6 @@ import { CreateUserWithUsernameHandler } from '@module/user/use-cases/create-use
 @Module({
   imports: [UserRepositoryModule, PasswordHasherModule],
   providers: [CreateUserWithUsernameHandler],
+  exports: [CreateUserWithUsernameHandler],
 })
 export class CreateUserWithUsernameModule {}
