@@ -37,3 +37,11 @@ export abstract class BaseError extends Error {
     };
   }
 }
+
+export class UnauthorizedError extends BaseError {
+  static CODE: string = 'COMMON.UNAUTHORIZED';
+
+  constructor(message?: string) {
+    super(message ?? 'Unauthorized can not access', UnauthorizedError.CODE);
+  }
+}
