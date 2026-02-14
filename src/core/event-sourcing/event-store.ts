@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
 import {
   InjectTransactionHost,
@@ -16,6 +16,10 @@ import {
 
 import { PrismaService } from '@shared/prisma/prisma.service';
 
+import {
+  EVENT_PUBLISHER,
+  IEventPublisher,
+} from '@core/event-publisher/event-publisher.interface';
 import { IEventStore } from '@core/event-sourcing/event-store.interface';
 
 @Injectable()
@@ -25,13 +29,14 @@ export class EventStore implements IEventStore {
     private readonly txHost: TransactionHost<
       TransactionalAdapterPrisma<PrismaService>
     >,
+    @Inject(EVENT_PUBLISHER) private readonly eventPublisher: IEventPublisher,
   ) {}
 
   async storeAggregateEvents(
     aggregateRoot: AggregateRoot<unknown>,
     actorId?: EntityId,
   ): Promise<DomainEvent[]> {
-    const events = aggregateRoot.getUncommittedEvents();
+    const events: DomainEvent[] = aggregateRoot.getUncommittedEvents();
     if (events.length === 0) {
       return [];
     }
@@ -67,6 +72,10 @@ export class EventStore implements IEventStore {
         };
       }),
     });
+
+    await Promise.all(
+      events.map((event) => this.eventPublisher.publish(event)),
+    );
 
     return events;
   }

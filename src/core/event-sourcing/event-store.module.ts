@@ -1,10 +1,11 @@
-import { Global, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 
+import { EventPublisherModule } from '@core/event-publisher/event-publisher.modulet';
 import { EventStore } from '@core/event-sourcing/event-store';
 import { EVENT_STORE } from '@core/event-sourcing/event-store.interface';
 
-@Global()
 @Module({
+  imports: [EventPublisherModule],
   providers: [
     {
       provide: EVENT_STORE,
