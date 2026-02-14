@@ -1,4 +1,5 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject } from '@nestjs/common';
+import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 
 import { User } from '@module/user/domain/user.entity';
 import { UserUsernameAlreadyOccupiedError } from '@module/user/errors/user-username-already-occupied.error';
@@ -12,9 +13,7 @@ import {
 } from '@module/user/services/password-hasher/password-hasher.interface';
 import { CreateUserWithUsernameCommand } from '@module/user/use-cases/create-user-with-username/create-user-with-username.command';
 
-import { ICommandHandler } from '@common/interfaces/command.interface';
-
-@Injectable()
+@CommandHandler(CreateUserWithUsernameCommand)
 export class CreateUserWithUsernameHandler implements ICommandHandler<
   CreateUserWithUsernameCommand,
   User

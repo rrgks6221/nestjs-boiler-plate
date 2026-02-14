@@ -1,1 +1,3 @@
-export abstract class BaseCommand {}
+import { ICommand } from '@nestjs/cqrs';
+
+export abstract class BaseCommand implements ICommand {}

@@ -6,6 +6,5 @@ import { GetUserByUsernameHandler } from '@module/user/use-cases/get-user-by-use
 @Module({
   imports: [UserRepositoryModule],
   providers: [GetUserByUsernameHandler],
-  exports: [GetUserByUsernameHandler],
 })
 export class GetUserByUsernameModule {}

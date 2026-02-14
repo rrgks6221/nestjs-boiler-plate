@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { CqrsModule } from '@nestjs/cqrs';
 
 import { AuthModule } from '@module/auth/auth.module';
 import { UserModule } from '@module/user/user.module';
@@ -13,6 +14,7 @@ import { PrismaModule } from '@shared/prisma/prisma.module';
     ConfigModuleFactory(),
     PrismaModule,
     ClsModuleFactory(),
+    CqrsModule.forRoot(),
     AuthModule,
     UserModule,
   ],

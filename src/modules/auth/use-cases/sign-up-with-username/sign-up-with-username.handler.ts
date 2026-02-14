@@ -1,4 +1,5 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject } from '@nestjs/common';
+import { CommandBus, CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 
 import { AuthTokens } from '@module/auth/entities/auth-tokens.vo';
 import {
@@ -6,25 +7,26 @@ import {
   IAuthTokenService,
 } from '@module/auth/services/auth-token/auth-token.service.interface';
 import { SignUpWithUsernameCommand } from '@module/auth/use-cases/sign-up-with-username/sign-up-with-username.command';
+import { User } from '@module/user/domain/user.entity';
 import { CreateUserWithUsernameCommand } from '@module/user/use-cases/create-user-with-username/create-user-with-username.command';
-import { CreateUserWithUsernameHandler } from '@module/user/use-cases/create-user-with-username/create-user-with-username.handler';
 
-import { ICommandHandler } from '@common/interfaces/command.interface';
-
-@Injectable()
+@CommandHandler(SignUpWithUsernameCommand)
 export class SignUpWithUsernameHandler implements ICommandHandler<
   SignUpWithUsernameCommand,
   AuthTokens
 > {
   constructor(
-    @Inject(CreateUserWithUsernameHandler)
-    private readonly createUserWithUsernameHandler: CreateUserWithUsernameHandler,
+    @Inject(CommandBus)
+    private readonly commandBus: CommandBus,
     @Inject(AUTH_TOKEN_SERVICE)
     private readonly authTokenService: IAuthTokenService,
   ) {}
 
   async execute(command: SignUpWithUsernameCommand): Promise<AuthTokens> {
-    const user = await this.createUserWithUsernameHandler.execute(
+    const user = await this.commandBus.execute<
+      CreateUserWithUsernameCommand,
+      User
+    >(
       new CreateUserWithUsernameCommand({
         username: command.username,
         password: command.password,

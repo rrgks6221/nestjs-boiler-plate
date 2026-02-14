@@ -1,4 +1,5 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject } from '@nestjs/common';
+import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 
 import { User } from '@module/user/domain/user.entity';
 import { UserNotFoundError } from '@module/user/errors/user-not-found.error';
@@ -8,9 +9,7 @@ import {
 } from '@module/user/repositories/user/user.repository.interface';
 import { GetUserByUsernameQuery } from '@module/user/use-cases/get-user-by-username/get-user-by-username.query';
 
-import { IQueryHandler } from '@common/interfaces/query.interface';
-
-@Injectable()
+@QueryHandler(GetUserByUsernameQuery)
 export class GetUserByUsernameHandler implements IQueryHandler<
   GetUserByUsernameQuery,
   User

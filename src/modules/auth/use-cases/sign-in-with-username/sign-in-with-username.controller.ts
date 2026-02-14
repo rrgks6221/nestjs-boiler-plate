@@ -6,17 +6,18 @@ import {
   Post,
   Res,
 } from '@nestjs/common';
+import { CommandBus } from '@nestjs/cqrs';
 import { ApiCreatedResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { Response } from 'express';
 
+import { AuthTokens } from '@module/auth/entities/auth-tokens.vo';
 import { SignInfoMismatchedError } from '@module/auth/errors/sign-info-mismatched.error';
 import {
   AUTH_COOKIE_SERVICE,
   IAuthCookieService,
 } from '@module/auth/services/auth-cookie/auth-cookie.service.interface';
 import { SignInWithUsernameCommand } from '@module/auth/use-cases/sign-in-with-username/sign-in-with-username.command';
-import { SignInWithUsernameHandler } from '@module/auth/use-cases/sign-in-with-username/sign-in-with-username.handler';
 import { SignUpWithUsernameDto } from '@module/auth/use-cases/sign-up-with-username/sign-up-with-username.dto';
 
 import { BaseHttpException } from '@common/base/base-http-exception';
@@ -25,8 +26,8 @@ import { BaseHttpException } from '@common/base/base-http-exception';
 @Controller()
 export class SignInWithUsernameController {
   constructor(
-    @Inject(SignInWithUsernameHandler)
-    private readonly signInWithUsernameHandler: SignInWithUsernameHandler,
+    @Inject(CommandBus)
+    private readonly commandBus: CommandBus,
     @Inject(AUTH_COOKIE_SERVICE)
     private readonly authCookieService: IAuthCookieService,
   ) {}
@@ -48,7 +49,10 @@ export class SignInWithUsernameController {
     @Body() dto: SignUpWithUsernameDto,
   ): Promise<void> {
     try {
-      const tokens = await this.signInWithUsernameHandler.execute(
+      const tokens = await this.commandBus.execute<
+        SignInWithUsernameCommand,
+        AuthTokens
+      >(
         new SignInWithUsernameCommand({
           username: dto.username,
           password: dto.password,

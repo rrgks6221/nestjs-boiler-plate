@@ -6,17 +6,18 @@ import {
   Post,
   Res,
 } from '@nestjs/common';
+import { CommandBus } from '@nestjs/cqrs';
 import { ApiCreatedResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { Response } from 'express';
 
+import { AuthTokens } from '@module/auth/entities/auth-tokens.vo';
 import {
   AUTH_COOKIE_SERVICE,
   IAuthCookieService,
 } from '@module/auth/services/auth-cookie/auth-cookie.service.interface';
 import { SignUpWithUsernameCommand } from '@module/auth/use-cases/sign-up-with-username/sign-up-with-username.command';
 import { SignUpWithUsernameDto } from '@module/auth/use-cases/sign-up-with-username/sign-up-with-username.dto';
-import { SignUpWithUsernameHandler } from '@module/auth/use-cases/sign-up-with-username/sign-up-with-username.handler';
 import { UserUsernameAlreadyOccupiedError } from '@module/user/errors/user-username-already-occupied.error';
 
 import { BaseHttpException } from '@common/base/base-http-exception';
@@ -25,8 +26,8 @@ import { BaseHttpException } from '@common/base/base-http-exception';
 @Controller()
 export class SignUpWithUsernameController {
   constructor(
-    @Inject(SignUpWithUsernameHandler)
-    private readonly signUpWithUsernameHandler: SignUpWithUsernameHandler,
+    @Inject(CommandBus)
+    private readonly commandBus: CommandBus,
     @Inject(AUTH_COOKIE_SERVICE)
     private readonly authCookieService: IAuthCookieService,
   ) {}
@@ -48,7 +49,10 @@ export class SignUpWithUsernameController {
     @Body() dto: SignUpWithUsernameDto,
   ): Promise<void> {
     try {
-      const tokens = await this.signUpWithUsernameHandler.execute(
+      const tokens = await this.commandBus.execute<
+        SignUpWithUsernameCommand,
+        AuthTokens
+      >(
         new SignUpWithUsernameCommand({
           username: dto.username,
           password: dto.password,
