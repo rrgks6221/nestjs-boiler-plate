@@ -49,7 +49,10 @@ export class UnauthorizedError extends BaseError {
 export class RequestValidationError extends BaseError {
   static CODE = 'COMMON.REQUEST_VALIDATION_ERROR';
 
-  constructor() {
-    super('request input validation error', RequestValidationError.CODE);
+  constructor(message?: string) {
+    super(
+      message ?? 'request input validation error',
+      RequestValidationError.CODE,
+    );
   }
 }
