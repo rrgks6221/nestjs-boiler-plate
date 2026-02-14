@@ -3,16 +3,14 @@ import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 
 import { User } from '@module/user/domain/user.entity';
 import { UserNotFoundError } from '@module/user/errors/user-not-found.error';
-import {
-  IUserRepository,
-  USER_REPOSITORY,
-} from '@module/user/repositories/user/user.repository.interface';
+import * as userRepositoryInterface from '@module/user/repositories/user/user.repository.interface';
 import { GetUserQuery } from '@module/user/use-cases/get-user/get-user.query';
 
 @QueryHandler(GetUserQuery)
 export class GetUserHandler implements IQueryHandler<GetUserQuery, User> {
   constructor(
-    @Inject(USER_REPOSITORY) private readonly userRepository: IUserRepository,
+    @Inject(userRepositoryInterface.USER_REPOSITORY)
+    private readonly userRepository: userRepositoryInterface.IUserRepository,
   ) {}
 
   async execute(query: GetUserQuery): Promise<User> {

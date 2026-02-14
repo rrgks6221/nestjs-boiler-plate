@@ -45,3 +45,11 @@ export class UnauthorizedError extends BaseError {
     super(message ?? 'Unauthorized can not access', UnauthorizedError.CODE);
   }
 }
+
+export class RequestValidationError extends BaseError {
+  static CODE = 'COMMON.REQUEST_VALIDATION_ERROR';
+
+  constructor() {
+    super('request input validation error', RequestValidationError.CODE);
+  }
+}
