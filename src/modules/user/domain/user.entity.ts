@@ -1,3 +1,5 @@
+import { UserSignedUpEvent } from '@module/user/event/user-signed-up.event';
+
 import {
   AggregateRoot,
   CreateEntityProps,
@@ -28,7 +30,7 @@ export class User extends AggregateRoot<UserProps> {
     const id = generateEntityId();
     const now = new Date();
 
-    return new User({
+    const user = new User({
       id,
       props: {
         signInType: SignInType.username,
@@ -38,6 +40,15 @@ export class User extends AggregateRoot<UserProps> {
       createdAt: now,
       updatedAt: now,
     });
+
+    user.apply(
+      new UserSignedUpEvent(user.id, {
+        signInType: user.signInType,
+        username: user.username,
+      }),
+    );
+
+    return user;
   }
 
   get signInType() {
