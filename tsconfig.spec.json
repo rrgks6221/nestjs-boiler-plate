@@ -1,0 +1,24 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../dist/out-tsc",
+    "module": "commonjs",
+    "types": ["jest", "node"],
+    "paths": {
+      "@src/*": ["./src/!(shared|common|modules)/*"],
+      "@module/*": ["./src/modules/*"],
+      "@common/*": ["./src/common/*"],
+      "@shared/*": ["./src/shared/*"],
+      "@core/*": ["./src/core/*"]
+    }
+  },
+  "include": [
+    "jest.config.ts",
+    "src/**/*.test.ts",
+    "src/**/*.spec.ts",
+    "src/**/*.mock.ts",
+    "src/**/*.d.ts",
+    "test/**/*.d.ts"
+  ],
+  "files": ["test/global.d.ts"]
+}
