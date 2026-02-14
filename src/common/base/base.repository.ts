@@ -1,4 +1,4 @@
-import { BaseEntity, EntityId } from '@common/base/base.entity';
+import { AggregateRoot, BaseEntity, EntityId } from '@common/base/base.entity';
 
 export interface ISort<Field extends string = string> {
   field: Field;
@@ -16,7 +16,7 @@ export interface RepositoryPort<E> {
 }
 
 export abstract class BaseRepository<
-  Entity extends BaseEntity<unknown>,
+  Entity extends BaseEntity<unknown> | AggregateRoot<unknown>,
 > implements RepositoryPort<Entity> {
   protected abstract TABLE_NAME: string;
 

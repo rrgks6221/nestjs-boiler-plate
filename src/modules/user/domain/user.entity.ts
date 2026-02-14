@@ -1,5 +1,5 @@
 import {
-  BaseEntity,
+  AggregateRoot,
   CreateEntityProps,
   generateEntityId,
 } from '@common/base/base.entity';
@@ -19,7 +19,7 @@ export interface CreateWithUsernameProps {
   hashedPassword: string;
 }
 
-export class User extends BaseEntity<UserProps> {
+export class User extends AggregateRoot<UserProps> {
   constructor(props: CreateEntityProps<UserProps>) {
     super(props);
   }
