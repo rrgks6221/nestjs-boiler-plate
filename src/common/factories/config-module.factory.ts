@@ -13,6 +13,8 @@ export const ENV_KEY = {
   JWT_ISSUER: 'JWT_ISSUER',
   ACCESS_TOKEN_EXPIRES_IN: 'ACCESS_TOKEN_EXPIRES_IN',
   REFRESH_TOKEN_EXPIRES_IN: 'REFRESH_TOKEN_EXPIRES_IN',
+
+  LOGGER_LEVEL: 'LOGGER_LEVEL',
 } as const;
 
 export const ConfigModuleFactory = () => {
@@ -33,6 +35,10 @@ export const ConfigModuleFactory = () => {
       [ENV_KEY.JWT_ISSUER]: Joi.string().required(),
       [ENV_KEY.ACCESS_TOKEN_EXPIRES_IN]: Joi.string().required(),
       [ENV_KEY.REFRESH_TOKEN_EXPIRES_IN]: Joi.string().required(),
+
+      [ENV_KEY.LOGGER_LEVEL]: Joi.string()
+        .valid('silent', 'fatal', 'error', 'warn', 'info', 'debug', 'trace')
+        .default('info'),
     }),
   });
 };

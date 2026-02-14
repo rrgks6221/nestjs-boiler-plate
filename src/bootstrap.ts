@@ -11,6 +11,8 @@ import cookieParser from 'cookie-parser';
 import { BaseHttpExceptionFilter } from '@common/base/base-http-exception-filter';
 import { RequestValidationError } from '@common/base/base.error';
 
+import { LOGGER } from '@shared/logger/logger.module';
+
 export const setCookie = (app: INestApplication) => {
   app.use(cookieParser());
 };
@@ -67,4 +69,8 @@ export const setGlobalPipe = (app: INestApplication) => {
   };
 
   app.useGlobalPipes(new ValidationPipe({ ...options, exceptionFactory }));
+};
+
+export const setLogger = (app: INestApplication) => {
+  app.useLogger(app.get(LOGGER));
 };

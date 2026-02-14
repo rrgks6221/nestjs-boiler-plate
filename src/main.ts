@@ -6,16 +6,18 @@ import {
   setCors,
   setGlobalExceptionFilter,
   setGlobalPipe,
+  setLogger,
 } from 'src/bootstrap';
 import { SwaggerConfig } from 'src/swagger';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
 
   setCookie(app);
   setCors(app);
   setGlobalExceptionFilter(app);
   setGlobalPipe(app);
+  setLogger(app);
   SwaggerConfig.setup(app);
 
   await app.listen(process.env.PORT ?? 3000);

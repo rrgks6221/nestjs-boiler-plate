@@ -7,6 +7,7 @@ import { UserModule } from '@module/user/user.module';
 import { ClsModuleFactory } from '@common/factories/cls-module.factory';
 import { ConfigModuleFactory } from '@common/factories/config-module.factory';
 
+import { LoggerModule } from '@shared/logger/logger.module';
 import { PrismaModule } from '@shared/prisma/prisma.module';
 
 @Module({
@@ -15,6 +16,7 @@ import { PrismaModule } from '@shared/prisma/prisma.module';
     PrismaModule,
     ClsModuleFactory(),
     CqrsModule.forRoot(),
+    LoggerModule,
     AuthModule,
     UserModule,
   ],
