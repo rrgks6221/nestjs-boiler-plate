@@ -21,6 +21,8 @@ import { SignInWithUsernameCommand } from '@module/auth/use-cases/sign-in-with-u
 import { SignUpWithUsernameDto } from '@module/auth/use-cases/sign-up-with-username/sign-up-with-username.dto';
 
 import { BaseHttpException } from '@common/base/base-http-exception';
+import { RequestValidationError } from '@common/base/base.error';
+import { ApiErrorResponse } from '@common/decorators/api-fail-response.decorator';
 
 @ApiTags('auth')
 @Controller()
@@ -42,6 +44,10 @@ export class SignInWithUsernameController {
         },
       },
     },
+  })
+  @ApiErrorResponse({
+    [HttpStatus.BAD_REQUEST]: [RequestValidationError],
+    [HttpStatus.FORBIDDEN]: [SignInfoMismatchedError],
   })
   @Post('auth/sign-in/username')
   async signInWithUsername(

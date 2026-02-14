@@ -21,6 +21,8 @@ import { SignUpWithUsernameDto } from '@module/auth/use-cases/sign-up-with-usern
 import { UserUsernameAlreadyOccupiedError } from '@module/user/errors/user-username-already-occupied.error';
 
 import { BaseHttpException } from '@common/base/base-http-exception';
+import { RequestValidationError } from '@common/base/base.error';
+import { ApiErrorResponse } from '@common/decorators/api-fail-response.decorator';
 
 @ApiTags('auth')
 @Controller()
@@ -42,6 +44,10 @@ export class SignUpWithUsernameController {
         },
       },
     },
+  })
+  @ApiErrorResponse({
+    [HttpStatus.BAD_REQUEST]: [RequestValidationError],
+    [HttpStatus.CONFLICT]: [UserUsernameAlreadyOccupiedError],
   })
   @Post('auth/sign-up/username')
   async signUpWithUsername(

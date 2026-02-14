@@ -5,6 +5,9 @@ import { SignInType } from '@module/user/domain/user.entity';
 import { BaseResponseDto } from '@common/base/base.dto';
 
 export class UserDto extends BaseResponseDto {
-  @ApiProperty()
+  @ApiProperty({
+    type: 'string',
+    enum: SignInType,
+  })
   signInType: SignInType;
 }
