@@ -8,7 +8,11 @@ import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-pr
 import { RequestContext } from 'nestjs-request-context';
 
 import { DomainEvent } from '@common/base/base.domain-event';
-import { AggregateRoot, generateEntityId } from '@common/base/base.entity';
+import {
+  AggregateRoot,
+  EntityId,
+  generateEntityId,
+} from '@common/base/base.entity';
 
 import { PrismaService } from '@shared/prisma/prisma.service';
 
@@ -25,6 +29,7 @@ export class EventStore implements IEventStore {
 
   async storeAggregateEvents(
     aggregateRoot: AggregateRoot<unknown>,
+    actorId?: EntityId,
   ): Promise<DomainEvent[]> {
     const events = aggregateRoot.getUncommittedEvents();
     if (events.length === 0) {
@@ -49,9 +54,10 @@ export class EventStore implements IEventStore {
       data: events.map((event, idx) => {
         return {
           id: BigInt(generateEntityId()),
-          actorId:
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
-            BigInt(RequestContext.currentContext?.req?.user?.id) || undefined,
+          actorId: actorId
+            ? BigInt(actorId)
+            : // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+              BigInt(RequestContext.currentContext?.req?.user?.id) || undefined,
           aggregate: events[0].aggregate,
           aggregateId: BigInt(event.aggregateId),
           eventName: event.eventName,
