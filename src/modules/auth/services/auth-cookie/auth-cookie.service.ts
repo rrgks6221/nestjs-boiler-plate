@@ -10,12 +10,12 @@ export class AuthCookieService implements IAuthCookieService {
   apply(res: Response, tokens: AuthTokens): void {
     res.cookie(
       'access_token',
-      tokens.accessToken,
+      tokens.accessToken.token,
       this.accessOptions(tokens.accessToken.expiresAt),
     );
     res.cookie(
       'refresh_token',
-      tokens.refreshToken,
+      tokens.refreshToken.token,
       this.refreshOptions(tokens.refreshToken.expiresAt),
     );
   }
