@@ -8,6 +8,13 @@ export const setCookie = (app: INestApplication) => {
   app.use(cookieParser());
 };
 
+export const setCors = (app: INestApplication) => {
+  app.enableCors({
+    credentials: true,
+    origin: true,
+  });
+};
+
 export const setGlobalExceptionFilter = (app: INestApplication) => {
   app.useGlobalFilters(new BaseHttpExceptionFilter());
 };
