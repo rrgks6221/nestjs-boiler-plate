@@ -14,6 +14,21 @@ datasource db {
   provider = "postgresql"
 }
 
+model EventStore {
+  id           BigInt   @id
+  actorId      BigInt?  @map("user_id")
+  aggregate    String   @db.VarChar(20)
+  aggregateId  BigInt   @map("aggregate_id")
+  eventName    String   @map("event_name")
+  eventPayload Json     @map("event_payload")
+  version      Int
+  occurredAt   DateTime @map("occurred")
+  storedAt     DateTime @default(now()) @map("created_at") @db.Timestamp(3)
+
+  @@unique([aggregateId, version])
+  @@map("event_store")
+}
+
 enum SignInType {
   username
 }
