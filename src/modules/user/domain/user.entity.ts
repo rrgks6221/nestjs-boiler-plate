@@ -1,3 +1,4 @@
+import { UserSignedInEvent } from '@module/user/event/user-signed-in.event';
 import { UserSignedUpEvent } from '@module/user/event/user-signed-up.event';
 
 import {
@@ -61,6 +62,15 @@ export class User extends AggregateRoot<UserProps> {
 
   get password() {
     return this.props.password;
+  }
+
+  signIn() {
+    this.apply(
+      new UserSignedInEvent(this.id, {
+        signInType: this.props.signInType,
+        username: this.props.username,
+      }),
+    );
   }
 
   public validate(): void {}

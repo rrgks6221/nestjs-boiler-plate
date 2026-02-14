@@ -1,6 +1,8 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, ICommandHandler, QueryBus } from '@nestjs/cqrs';
 
+import { Transactional } from '@nestjs-cls/transactional';
+
 import { AuthTokens } from '@module/auth/entities/auth-tokens.vo';
 import { SignInfoMismatchedError } from '@module/auth/errors/sign-info-mismatched.error';
 import {
@@ -16,6 +18,11 @@ import {
 } from '@module/user/services/password-hasher/password-hasher.interface';
 import { GetUserByUsernameQuery } from '@module/user/use-cases/get-user-by-username/get-user-by-username.query';
 
+import {
+  EVENT_STORE,
+  IEventStore,
+} from '@core/event-sourcing/event-store.interface';
+
 @CommandHandler(SignInWithUsernameCommand)
 export class SignInWithUsernameHandler implements ICommandHandler<
   SignInWithUsernameCommand,
@@ -28,8 +35,11 @@ export class SignInWithUsernameHandler implements ICommandHandler<
     private readonly passwordHasher: IPasswordHasher,
     @Inject(AUTH_TOKEN_SERVICE)
     private readonly authTokenService: IAuthTokenService,
+    @Inject(EVENT_STORE)
+    private readonly eventStore: IEventStore,
   ) {}
 
+  @Transactional()
   async execute(command: SignInWithUsernameCommand): Promise<AuthTokens> {
     const user = await this.queryBus
       .execute<GetUserByUsernameQuery, User>(
@@ -52,6 +62,9 @@ export class SignInWithUsernameHandler implements ICommandHandler<
     if (isPasswordMatch === false) {
       throw new SignInfoMismatchedError();
     }
+
+    user.signIn();
+    await this.eventStore.storeAggregateEvents(user, user.id);
 
     const authTokens = this.authTokenService.createTokens(user.id);
 
