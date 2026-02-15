@@ -8,17 +8,19 @@ export default {
   testRegex: '.*\\.spec\\.ts$',
   collectCoverageFrom: ['**/*.(t|j)s'],
   moduleNameMapper: {
+    '^(\\.{1,2}/.*)\\.js$': '$1',
     '^@src/(.*)$': '<rootDir>/src/$1',
     '^@module/(.*)$': '<rootDir>/src/modules/$1',
     '^@common/(.*)$': '<rootDir>/src/common/$1',
     '^@shared/(.*)$': '<rootDir>/src/shared/$1',
     '^@core/(.*)$': '<rootDir>/src/core/$1',
+    '^generated/(.*)$': '<rootDir>/generated/$1',
   },
   coverageDirectory: '../coverage',
   testEnvironment: 'node',
   displayName: 'nestjs-cqrs-boilerplate',
   transform: {
-    '^.+\\.[tj]s$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.spec.json' }],
+    '^.+\\.[tj]s$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.json' }],
   },
   setupFilesAfterEnv: [
     '<rootDir>/test/after-env-setup.ts',
