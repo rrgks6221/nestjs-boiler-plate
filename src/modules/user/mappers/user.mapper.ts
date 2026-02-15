@@ -5,7 +5,6 @@ import { SignInType, User } from '@module/user/domain/user.entity';
 import { BaseMapper } from '@common/base/base.mapper';
 
 export class UserMapper extends BaseMapper {
-  // implements IBaseMapper<User, UserRaw>
   static toEntity(raw: UserModel): User {
     return new User({
       id: this.toEntityId(raw.id),
