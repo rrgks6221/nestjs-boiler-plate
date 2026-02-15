@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 import bcrypt from 'bcrypt';
@@ -9,10 +9,7 @@ import { ENV_KEY } from '@common/factories/config-module.factory';
 
 @Injectable()
 export class PasswordHasher implements IPasswordHasher {
-  constructor(
-    @Inject(ConfigService)
-    private readonly configService: ConfigService,
-  ) {}
+  constructor(private readonly configService: ConfigService) {}
 
   async hash(plain: string): Promise<string> {
     return await bcrypt.hash(

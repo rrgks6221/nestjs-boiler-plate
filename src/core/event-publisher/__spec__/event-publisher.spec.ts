@@ -33,7 +33,6 @@ describe(EventPublisher.name, () => {
 
       await expect(eventPublisher.publish(event)).resolves.toBeUndefined();
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(eventEmitter.emit).toHaveBeenCalledWith(event.eventName, event);
     });
   });

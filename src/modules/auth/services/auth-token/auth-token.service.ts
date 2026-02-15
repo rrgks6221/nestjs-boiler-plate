@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 
@@ -16,9 +16,7 @@ import { ENV_KEY } from '@common/factories/config-module.factory';
 @Injectable()
 export class AuthTokenService implements IAuthTokenService {
   constructor(
-    @Inject(JwtService)
     private readonly jwtService: JwtService,
-    @Inject(ConfigService)
     private readonly configService: ConfigService,
   ) {}
 

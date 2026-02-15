@@ -28,7 +28,6 @@ import { ApiErrorResponse } from '@common/decorators/api-fail-response.decorator
 @Controller()
 export class SignUpWithUsernameController {
   constructor(
-    @Inject(CommandBus)
     private readonly commandBus: CommandBus,
     @Inject(AUTH_COOKIE_SERVICE)
     private readonly authCookieService: IAuthCookieService,

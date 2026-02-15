@@ -2,11 +2,9 @@ import {
   CanActivate,
   ExecutionContext,
   HttpStatus,
-  Inject,
   Injectable,
   SetMetadata,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 
@@ -20,11 +18,7 @@ export const Public = () => SetMetadata('isPublic', true);
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
   constructor(
-    @Inject(JwtService)
     private readonly jwtService: JwtService,
-    @Inject(ConfigService)
-    private readonly configService: ConfigService,
-    @Inject(Reflector)
     private readonly reflector: Reflector,
   ) {}
 
@@ -65,7 +59,7 @@ export class JwtAuthGuard implements CanActivate {
   }
 
   private extractTokenFromCookie(request: Request): string | undefined {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return request.cookies.access_token;
   }
 }

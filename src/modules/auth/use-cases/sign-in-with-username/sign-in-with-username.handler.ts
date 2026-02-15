@@ -29,7 +29,6 @@ export class SignInWithUsernameHandler implements ICommandHandler<
   AuthTokens
 > {
   constructor(
-    @Inject(QueryBus)
     private readonly queryBus: QueryBus,
     @Inject(PASSWORD_HASHER)
     private readonly passwordHasher: IPasswordHasher,

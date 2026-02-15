@@ -1,4 +1,4 @@
-import { Controller, Get, HttpStatus, Inject, UseGuards } from '@nestjs/common';
+import { Controller, Get, HttpStatus, UseGuards } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
 import {
   ApiBearerAuth,
@@ -22,10 +22,7 @@ import * as currentUserDecorator from '@common/decorators/current-user.decorator
 @ApiTags('user')
 @Controller()
 export class GetUserController {
-  constructor(
-    @Inject(QueryBus)
-    private readonly queryBus: QueryBus,
-  ) {}
+  constructor(private readonly queryBus: QueryBus) {}
 
   @ApiOperation({ summary: '내 정보 조회' })
   @ApiBearerAuth()

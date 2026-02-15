@@ -23,7 +23,6 @@ export class SignUpWithUsernameHandler implements ICommandHandler<
   AuthTokens
 > {
   constructor(
-    @Inject(CommandBus)
     private readonly commandBus: CommandBus,
     @Inject(AUTH_TOKEN_SERVICE)
     private readonly authTokenService: IAuthTokenService,
