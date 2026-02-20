@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { exec } from 'child_process';
 import { Command } from 'commander';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
@@ -112,11 +113,16 @@ const runCommand = (command: string): Promise<void> => {
 const toReconfiguredText = (
   preset: string,
   moduleName: string,
+  domainName: string,
   useCaseName: string,
   operation: 'command' | 'query',
 ) => {
   const REGEXP_MAP = [
     ['module-name', moduleName],
+    ['domain-name', domainName],
+    ['DomainName', pascalCase(domainName)],
+    ['domainName', camelCase(domainName)],
+    ['DOMAIN_NAME', upperSnake(domainName)],
 
     ['use-case-name', useCaseName],
     ['UseCaseName', pascalCase(useCaseName)],
@@ -138,6 +144,7 @@ const writeFileIfAbsent = (
   filePath: string,
   preset: string,
   moduleName: string,
+  domainName: string,
   useCaseName: string,
   operation: 'command' | 'query',
 ) => {
@@ -148,7 +155,7 @@ const writeFileIfAbsent = (
 
   writeFileSync(
     filePath,
-    toReconfiguredText(preset, moduleName, useCaseName, operation),
+    toReconfiguredText(preset, moduleName, domainName, useCaseName, operation),
   );
   createdFiles.push(filePath);
   console.log(`generate file ${filePath}`);
@@ -221,7 +228,14 @@ export class UseCaseNameModule {}
 `;
 
   const existed = existsSync(modulePath);
-  writeFileIfAbsent(modulePath, PRESET, moduleName, moduleName, 'command');
+  writeFileIfAbsent(
+    modulePath,
+    PRESET,
+    moduleName,
+    moduleName,
+    moduleName,
+    'command',
+  );
 
   return {
     modulePath,
@@ -332,6 +346,9 @@ const PRESETS = {
 import { CommandBus } from '@nestjs/cqrs';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 
+import { DomainNameDtoAssembler } from '@module/module-name/assemblers/domain-name-dto.assembler';
+import { DomainName } from '@module/module-name/domain/domain-name.entity';
+import { DomainNameDto } from '@module/module-name/dto/domain-name.dto';
 import { UseCaseNameDto } from '@module/module-name/use-cases/use-case-name/use-case-name.dto';
 import { UseCaseNameOperationName } from '@module/module-name/use-cases/use-case-name/use-case-name.operation-name';
 
@@ -344,18 +361,22 @@ export class UseCaseNameController {
   constructor(private readonly commandBus: CommandBus) {}
 
   @ApiOperation({ summary: '' })
-  @ApiOkResponse({ description: 'success' })
+  @ApiOkResponse({ type: DomainNameDto })
   @ApiErrorResponse({
     [HttpStatus.BAD_REQUEST]: [RequestValidationError],
   })
   @HttpCode(HttpStatus.CREATED)
   @Post()
-  async useCaseName(@Body() dto: UseCaseNameDto): Promise<void> {
+  async useCaseName(@Body() dto: UseCaseNameDto): Promise<DomainNameDto> {
     try {
-      const result = await this.commandBus.execute<UseCaseNameOperationName, unknown>(
+      const domainName = await this.commandBus.execute<
+        UseCaseNameOperationName,
+        DomainName
+      >(
         new UseCaseNameOperationName(dto),
       );
-      void result;
+
+      return DomainNameDtoAssembler.convertToDto(domainName);
     } catch (error) {
       throw error;
     }
@@ -367,6 +388,9 @@ export class UseCaseNameController {
 import { QueryBus } from '@nestjs/cqrs';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 
+import { DomainNameDtoAssembler } from '@module/module-name/assemblers/domain-name-dto.assembler';
+import { DomainName } from '@module/module-name/domain/domain-name.entity';
+import { DomainNameDto } from '@module/module-name/dto/domain-name.dto';
 import { UseCaseNameOperationName } from '@module/module-name/use-cases/use-case-name/use-case-name.operation-name';
 
 import { RequestValidationError } from '@common/base/base.error';
@@ -378,18 +402,21 @@ export class UseCaseNameController {
   constructor(private readonly queryBus: QueryBus) {}
 
   @ApiOperation({ summary: '' })
-  @ApiOkResponse({ description: 'success' })
+  @ApiOkResponse({ type: DomainNameDto })
   @ApiErrorResponse({
     [HttpStatus.BAD_REQUEST]: [RequestValidationError],
   })
   @Get()
-  async useCaseName(): Promise<unknown> {
+  async useCaseName(): Promise<DomainNameDto> {
     try {
-      const result = await this.queryBus.execute<UseCaseNameOperationName, unknown>(
+      const domainName = await this.queryBus.execute<
+        UseCaseNameOperationName,
+        DomainName
+      >(
         new UseCaseNameOperationName({}),
       );
 
-      return result;
+      return DomainNameDtoAssembler.convertToDto(domainName);
     } catch (error) {
       throw error;
     }
@@ -397,57 +424,87 @@ export class UseCaseNameController {
 }
 `,
 
-  HANDLER_COMMAND_PRESET: `import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+  HANDLER_COMMAND_PRESET: `import { Inject } from '@nestjs/common';
+import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 
+import { DomainName } from '@module/module-name/domain/domain-name.entity';
+import {
+  DOMAIN_NAME_REPOSITORY,
+  IDomainNameRepository,
+} from '@module/module-name/repositories/domain-name.repository.interface';
 import { UseCaseNameOperationName } from '@module/module-name/use-cases/use-case-name/use-case-name.operation-name';
 
 @CommandHandler(UseCaseNameOperationName)
 export class UseCaseNameHandler
-  implements ICommandHandler<UseCaseNameOperationName, void>
+  implements ICommandHandler<UseCaseNameOperationName, DomainName>
 {
-  constructor() {}
+  constructor(
+    @Inject(DOMAIN_NAME_REPOSITORY)
+    private readonly domainNameRepository: IDomainNameRepository,
+  ) {}
 
-  async execute(command: UseCaseNameOperationName): Promise<void> {
+  async execute(command: UseCaseNameOperationName): Promise<DomainName> {
     void command;
   }
 }
 `,
 
-  HANDLER_QUERY_PRESET: `import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
+  HANDLER_QUERY_PRESET: `import { Inject } from '@nestjs/common';
+import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 
+import { DomainName } from '@module/module-name/domain/domain-name.entity';
+import {
+  DOMAIN_NAME_REPOSITORY,
+  IDomainNameRepository,
+} from '@module/module-name/repositories/domain-name.repository.interface';
 import { UseCaseNameOperationName } from '@module/module-name/use-cases/use-case-name/use-case-name.operation-name';
 
 @QueryHandler(UseCaseNameOperationName)
 export class UseCaseNameHandler
-  implements IQueryHandler<UseCaseNameOperationName, unknown>
+  implements IQueryHandler<UseCaseNameOperationName, DomainName>
 {
-  constructor() {}
+  constructor(
+    @Inject(DOMAIN_NAME_REPOSITORY)
+    private readonly domainNameRepository: IDomainNameRepository,
+  ) {}
 
-  async execute(query: UseCaseNameOperationName): Promise<unknown> {
+  async execute(query: UseCaseNameOperationName): Promise<DomainName> {
     void query;
-
-    return {};
   }
 }
 `,
 
   HANDLER_SPEC_PRESET: `import { Test, TestingModule } from '@nestjs/testing';
 
+import {
+  DOMAIN_NAME_REPOSITORY,
+  IDomainNameRepository,
+} from '@module/module-name/repositories/domain-name.repository.interface';
 import { UseCaseNameOperationNameFactory } from '@module/module-name/use-cases/use-case-name/__spec__/use-case-name-operation-name.factory';
 import { UseCaseNameHandler } from '@module/module-name/use-cases/use-case-name/use-case-name.handler';
 import { UseCaseNameOperationName } from '@module/module-name/use-cases/use-case-name/use-case-name.operation-name';
 
 describe(UseCaseNameHandler.name, () => {
   let handler: UseCaseNameHandler;
+  let domainNameRepository: IDomainNameRepository;
 
   let operationName: UseCaseNameOperationName;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [UseCaseNameHandler],
+      providers: [
+        UseCaseNameHandler,
+        {
+          provide: DOMAIN_NAME_REPOSITORY,
+          useValue: {},
+        },
+      ],
     }).compile();
 
     handler = module.get<UseCaseNameHandler>(UseCaseNameHandler);
+    domainNameRepository = module.get<IDomainNameRepository>(
+      DOMAIN_NAME_REPOSITORY,
+    );
   });
 
   beforeEach(() => {
@@ -504,7 +561,7 @@ export const UseCaseNameOperationNameFactory = Factory.define<
 });
 `,
 
-  DTO_PRESET: `export class UseCaseNameDto implements IUseCaseNameOperationNameProps {}
+  DTO_PRESET: `export class UseCaseNameDto {}
 `,
 };
 
@@ -515,12 +572,18 @@ program
   .action(async () => {
     const rl = createInterface({ input, output });
     const moduleName = (await rl.question('module name: ')).trim();
+    const domainName = (await rl.question('domain name: ')).trim();
     const useCaseName = (await rl.question('use-case name: ')).trim();
     rl.close();
+
     const operation = await promptOperationSelect();
 
-    if (moduleName.length === 0 || useCaseName.length === 0) {
-      throw new Error('moduleName, useCaseName is required');
+    if (
+      moduleName.length === 0 ||
+      domainName.length === 0 ||
+      useCaseName.length === 0
+    ) {
+      throw new Error('moduleName, domainName, useCaseName is required');
     }
 
     const useCaseDir = path.resolve(
@@ -553,6 +616,7 @@ program
         ? PRESETS.CONTROLLER_COMMAND_PRESET
         : PRESETS.CONTROLLER_QUERY_PRESET,
       moduleName,
+      domainName,
       useCaseName,
       operation,
     );
@@ -562,6 +626,7 @@ program
         ? PRESETS.HANDLER_COMMAND_PRESET
         : PRESETS.HANDLER_QUERY_PRESET,
       moduleName,
+      domainName,
       useCaseName,
       operation,
     );
@@ -571,6 +636,7 @@ program
         ? PRESETS.OPERATION_COMMAND_PRESET
         : PRESETS.OPERATION_QUERY_PRESET,
       moduleName,
+      domainName,
       useCaseName,
       operation,
     );
@@ -578,6 +644,7 @@ program
       handlerSpecPath,
       PRESETS.HANDLER_SPEC_PRESET,
       moduleName,
+      domainName,
       useCaseName,
       operation,
     );
@@ -585,6 +652,7 @@ program
       factoryPath,
       PRESETS.FACTORY_OPERATION_PRESET,
       moduleName,
+      domainName,
       useCaseName,
       operation,
     );
@@ -592,8 +660,9 @@ program
     if (operation === 'command') {
       writeFileIfAbsent(
         dtoPath,
-        `import { IUseCaseNameOperationNameProps } from '@module/module-name/use-cases/use-case-name/use-case-name.operation-name';\n\n${PRESETS.DTO_PRESET}`,
+        PRESETS.DTO_PRESET,
         moduleName,
+        domainName,
         useCaseName,
         operation,
       );
