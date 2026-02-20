@@ -56,3 +56,11 @@ export class RequestValidationError extends BaseError {
     );
   }
 }
+
+export class InternalServerError extends BaseError {
+  static CODE = 'COMMON.INTERNAL_SERVER_ERROR';
+
+  constructor(message?: string) {
+    super(message ?? 'Internal server error', InternalServerError.CODE);
+  }
+}

@@ -13,6 +13,7 @@ import {
   EntityId,
   generateEntityId,
 } from '@common/base/base.entity';
+import { InternalServerError } from '@common/base/base.error';
 
 import { PrismaService } from '@shared/prisma/prisma.service';
 
@@ -41,15 +42,22 @@ export class EventStore implements IEventStore {
       return [];
     }
 
+    const aggregateId = this.getAggregateId(events);
+    const parsedActorId = this.parseActorId(actorId);
+
+    await this.txHost.tx.$executeRaw`
+      SELECT pg_advisory_xact_lock(${aggregateId})
+    `;
+
     const result = await this.txHost.tx.eventStore.findFirst({
       select: {
         version: true,
       },
       where: {
-        aggregateId: BigInt(aggregateRoot.id),
+        aggregateId,
       },
       orderBy: {
-        id: 'desc',
+        version: 'desc',
       },
     });
 
@@ -59,9 +67,9 @@ export class EventStore implements IEventStore {
       data: events.map((event, idx) => {
         return {
           id: BigInt(generateEntityId()),
-          actorId: this.parseActorId(actorId),
+          actorId: parsedActorId,
           aggregate: events[0].aggregate,
-          aggregateId: BigInt(event.aggregateId),
+          aggregateId,
           eventName: event.eventName,
           eventPayload: event.eventPayload,
           version: version + idx + 1,
@@ -75,6 +83,19 @@ export class EventStore implements IEventStore {
     );
 
     return events;
+  }
+
+  private getAggregateId(events: DomainEvent[]): bigint {
+    const firstAggregateId = events[0].aggregateId;
+    const hasMismatchedAggregateId = events.some(
+      (event) => event.aggregateId !== firstAggregateId,
+    );
+
+    if (hasMismatchedAggregateId) {
+      throw new InternalServerError('all events must have same aggregateId');
+    }
+
+    return BigInt(firstAggregateId);
   }
 
   private parseActorId(actorId?: EntityId): bigint | undefined {
