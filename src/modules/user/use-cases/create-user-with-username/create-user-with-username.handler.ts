@@ -6,11 +6,11 @@ import { UserUsernameAlreadyOccupiedError } from '@module/user/errors/user-usern
 import {
   IUserRepository,
   USER_REPOSITORY,
-} from '@module/user/repositories/user/user.repository.interface';
+} from '@module/user/repositories/user.repository.interface';
 import {
   IPasswordHasher,
   PASSWORD_HASHER,
-} from '@module/user/services/password-hasher/password-hasher.interface';
+} from '@module/user/services/password-hasher.interface';
 import { CreateUserWithUsernameCommand } from '@module/user/use-cases/create-user-with-username/create-user-with-username.command';
 
 @CommandHandler(CreateUserWithUsernameCommand)

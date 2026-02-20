@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 
 import bcrypt from 'bcrypt';
 
-import { IPasswordHasher } from '@module/user/services/password-hasher/password-hasher.interface';
+import { IPasswordHasher } from '@module/user/services/password-hasher.interface';
 
 import { ENV_KEY } from '@common/factories/config-module.factory';
 

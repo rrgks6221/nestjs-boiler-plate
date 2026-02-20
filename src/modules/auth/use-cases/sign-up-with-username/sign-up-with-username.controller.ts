@@ -15,7 +15,7 @@ import { AuthTokens } from '@module/auth/entities/auth-tokens.vo';
 import {
   AUTH_COOKIE_SERVICE,
   IAuthCookieService,
-} from '@module/auth/services/auth-cookie/auth-cookie.service.interface';
+} from '@module/auth/services/auth-cookie.service.interface';
 import { SignUpWithUsernameCommand } from '@module/auth/use-cases/sign-up-with-username/sign-up-with-username.command';
 import { SignUpWithUsernameDto } from '@module/auth/use-cases/sign-up-with-username/sign-up-with-username.dto';
 import { UserUsernameAlreadyOccupiedError } from '@module/user/errors/user-username-already-occupied.error';

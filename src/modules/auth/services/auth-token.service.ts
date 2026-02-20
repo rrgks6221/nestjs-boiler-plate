@@ -6,7 +6,7 @@ import { StringValue } from 'ms';
 
 import { AuthToken, AuthTokenType } from '@module/auth/entities/auth-token.vo';
 import { AuthTokens } from '@module/auth/entities/auth-tokens.vo';
-import { IAuthTokenService } from '@module/auth/services/auth-token/auth-token.service.interface';
+import { IAuthTokenService } from '@module/auth/services/auth-token.service.interface';
 
 import { ENV_KEY } from '@common/factories/config-module.factory';
 

@@ -2,11 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 
 import { UserFactory } from '@module/user/domain/__spec__/user.entity.factory';
 import { UserNotFoundError } from '@module/user/errors/user-not-found.error';
+import { UserRepository } from '@module/user/repositories/user.repository';
 import {
   IUserRepository,
   USER_REPOSITORY,
-} from '@module/user/repositories/user/user.repository.interface';
-import { UserRepositoryModule } from '@module/user/repositories/user/user.repository.module';
+} from '@module/user/repositories/user.repository.interface';
 import { GetUserQueryFactory } from '@module/user/use-cases/get-user/__spec__/get-user.query.factory';
 import { GetUserHandler } from '@module/user/use-cases/get-user/get-user.handler';
 import { GetUserQuery } from '@module/user/use-cases/get-user/get-user.query';
@@ -22,8 +22,14 @@ describe(GetUserHandler.name, () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [ClsModuleFactory(), UserRepositoryModule],
-      providers: [GetUserHandler],
+      imports: [ClsModuleFactory()],
+      providers: [
+        GetUserHandler,
+        {
+          provide: USER_REPOSITORY,
+          useClass: UserRepository,
+        },
+      ],
     }).compile();
 
     handler = module.get<GetUserHandler>(GetUserHandler);

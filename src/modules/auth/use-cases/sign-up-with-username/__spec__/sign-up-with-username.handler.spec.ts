@@ -3,7 +3,8 @@ import { JwtModule } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 
 import { AuthTokens } from '@module/auth/entities/auth-tokens.vo';
-import { AuthTokenModule } from '@module/auth/services/auth-token/auth-token.module';
+import { AuthTokenService } from '@module/auth/services/auth-token.service';
+import { AUTH_TOKEN_SERVICE } from '@module/auth/services/auth-token.service.interface';
 import { SignUpWithUsernameCommandFactory } from '@module/auth/use-cases/sign-up-with-username/__spec__/sign-up-with-username.command.factory';
 import { SignUpWithUsernameCommand } from '@module/auth/use-cases/sign-up-with-username/sign-up-with-username.command';
 import { SignUpWithUsernameHandler } from '@module/auth/use-cases/sign-up-with-username/sign-up-with-username.handler';
@@ -28,10 +29,15 @@ describe(SignUpWithUsernameHandler.name, () => {
         CqrsModule,
         ConfigModuleFactory(),
         JwtModule.register({ global: true, secret: 'test' }),
-        AuthTokenModule,
         EventStoreModule,
       ],
-      providers: [SignUpWithUsernameHandler],
+      providers: [
+        SignUpWithUsernameHandler,
+        {
+          provide: AUTH_TOKEN_SERVICE,
+          useClass: AuthTokenService,
+        },
+      ],
     }).compile();
 
     handler = module.get<SignUpWithUsernameHandler>(SignUpWithUsernameHandler);

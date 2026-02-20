@@ -2,11 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 
 import { UserFactory } from '@module/user/domain/__spec__/user.entity.factory';
 import { UserNotFoundError } from '@module/user/errors/user-not-found.error';
+import { UserRepository } from '@module/user/repositories/user.repository';
 import {
   IUserRepository,
   USER_REPOSITORY,
-} from '@module/user/repositories/user/user.repository.interface';
-import { UserRepositoryModule } from '@module/user/repositories/user/user.repository.module';
+} from '@module/user/repositories/user.repository.interface';
 import { GetUserByUsernameQueryFactory } from '@module/user/use-cases/get-user-by-username/__spec__/get-user-by-username.query.factory';
 import { GetUserByUsernameHandler } from '@module/user/use-cases/get-user-by-username/get-user-by-username.handler';
 import { GetUserByUsernameQuery } from '@module/user/use-cases/get-user-by-username/get-user-by-username.query';
@@ -22,8 +22,14 @@ describe(GetUserByUsernameHandler.name, () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [ClsModuleFactory(), UserRepositoryModule],
-      providers: [GetUserByUsernameHandler],
+      imports: [ClsModuleFactory()],
+      providers: [
+        GetUserByUsernameHandler,
+        {
+          provide: USER_REPOSITORY,
+          useClass: UserRepository,
+        },
+      ],
     }).compile();
 
     handler = module.get<GetUserByUsernameHandler>(GetUserByUsernameHandler);

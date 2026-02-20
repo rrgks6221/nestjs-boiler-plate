@@ -16,7 +16,7 @@ import { SignInfoMismatchedError } from '@module/auth/errors/sign-info-mismatche
 import {
   AUTH_COOKIE_SERVICE,
   IAuthCookieService,
-} from '@module/auth/services/auth-cookie/auth-cookie.service.interface';
+} from '@module/auth/services/auth-cookie.service.interface';
 import { SignInWithUsernameCommand } from '@module/auth/use-cases/sign-in-with-username/sign-in-with-username.command';
 import { SignUpWithUsernameDto } from '@module/auth/use-cases/sign-up-with-username/sign-up-with-username.dto';
 

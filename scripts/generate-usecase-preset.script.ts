@@ -214,6 +214,8 @@ import { Module } from '@nestjs/common';
 
 @Module({
   imports: [],
+  controllers: [],
+  providers: [],
 })
 export class UseCaseNameModule {}
 `;
@@ -225,6 +227,61 @@ export class UseCaseNameModule {}
     modulePath,
     created: !existed,
   };
+};
+
+const upsertArrayItemToModule = (
+  modulePath: string,
+  importLine: string,
+  arrayName: 'controllers' | 'providers',
+  itemName: string,
+) => {
+  const source = readFileSync(modulePath, 'utf8');
+  let next = source;
+
+  if (!next.includes(importLine)) {
+    next = `${importLine}\n${next}`;
+  }
+
+  const arrayRegex = new RegExp(`${arrayName}:\\s*\\[([\\s\\S]*?)\\]`, 'm');
+  const match = next.match(arrayRegex);
+
+  if (match !== null) {
+    const currentItemsText = match[1];
+    if (!currentItemsText.includes(itemName)) {
+      const trimmed = currentItemsText.trimEnd();
+      const hasItems = trimmed.trim().length > 0;
+      const normalized = hasItems
+        ? `${trimmed}${trimmed.trim().endsWith(',') ? '' : ','}\n    ${itemName},\n  `
+        : `\n    ${itemName},\n  `;
+
+      next = next.replace(arrayRegex, `${arrayName}: [${normalized}]`);
+    }
+  } else {
+    const moduleDecoratorRegex = /@Module\(\{([\s\S]*?)\}\)/m;
+    const moduleMatch = next.match(moduleDecoratorRegex);
+
+    if (moduleMatch === null) {
+      throw new Error(`Could not find @Module decorator in ${modulePath}`);
+    }
+
+    const body = moduleMatch[1];
+    const bodyTrimmedEnd = body.trimEnd();
+    const hasContent = bodyTrimmedEnd.trim().length > 0;
+    const suffix = hasContent
+      ? `${bodyTrimmedEnd}${bodyTrimmedEnd.trim().endsWith(',') ? '' : ','}\n  `
+      : '\n  ';
+    const replaced = `${suffix}${arrayName}: [\n    ${itemName},\n  ],\n`;
+
+    next = next.replace(moduleDecoratorRegex, `@Module({${replaced}})`);
+  }
+
+  if (next !== source) {
+    writeFileSync(modulePath, next);
+    if (!createdFiles.includes(modulePath)) {
+      createdFiles.push(modulePath);
+    }
+    console.log(`updated ${modulePath}`);
+  }
 };
 
 const ensureDomainModuleRegisteredToApp = (moduleName: string) => {
@@ -239,7 +296,7 @@ const ensureDomainModuleRegisteredToApp = (moduleName: string) => {
   upsertModuleImport(appModulePath, importLine, domainClass);
 };
 
-const ensureUseCaseModuleRegistered = (
+const ensureUseCaseRegisteredToDomainModule = (
   moduleName: string,
   useCaseName: string,
 ) => {
@@ -251,25 +308,26 @@ const ensureUseCaseModuleRegistered = (
     `${moduleName}.module.ts`,
   );
 
-  const useCaseModuleClass = `${pascalCase(useCaseName)}Module`;
-  const importLine = `import { ${useCaseModuleClass} } from '@module/${moduleName}/use-cases/${useCaseName}/${useCaseName}.module';`;
+  const useCaseControllerClass = `${pascalCase(useCaseName)}Controller`;
+  const useCaseHandlerClass = `${pascalCase(useCaseName)}Handler`;
+  const controllerImport = `import { ${useCaseControllerClass} } from '@module/${moduleName}/use-cases/${useCaseName}/${useCaseName}.controller';`;
+  const handlerImport = `import { ${useCaseHandlerClass} } from '@module/${moduleName}/use-cases/${useCaseName}/${useCaseName}.handler';`;
 
-  upsertModuleImport(domainModulePath, importLine, useCaseModuleClass);
+  upsertArrayItemToModule(
+    domainModulePath,
+    controllerImport,
+    'controllers',
+    useCaseControllerClass,
+  );
+  upsertArrayItemToModule(
+    domainModulePath,
+    handlerImport,
+    'providers',
+    useCaseHandlerClass,
+  );
 };
 
 const PRESETS = {
-  MODULE_PRESET: `import { Module } from '@nestjs/common';
-
-import { UseCaseNameController } from '@module/module-name/use-cases/use-case-name/use-case-name.controller';
-import { UseCaseNameHandler } from '@module/module-name/use-cases/use-case-name/use-case-name.handler';
-
-@Module({
-  controllers: [UseCaseNameController],
-  providers: [UseCaseNameHandler],
-})
-export class UseCaseNameModule {}
-`,
-
   CONTROLLER_COMMAND_PRESET: `import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -482,7 +540,6 @@ program
       ensureDomainModuleRegisteredToApp(moduleName);
     }
 
-    const modulePath = `${useCaseDir}/${useCaseName}.module.ts`;
     const controllerPath = `${useCaseDir}/${useCaseName}.controller.ts`;
     const operationPath = `${useCaseDir}/${useCaseName}.${operation}.ts`;
     const handlerPath = `${useCaseDir}/${useCaseName}.handler.ts`;
@@ -490,13 +547,6 @@ program
     const factoryPath = `${useCaseDir}/__spec__/${useCaseName}-${operation}.factory.ts`;
     const dtoPath = `${useCaseDir}/${useCaseName}.dto.ts`;
 
-    writeFileIfAbsent(
-      modulePath,
-      PRESETS.MODULE_PRESET,
-      moduleName,
-      useCaseName,
-      operation,
-    );
     writeFileIfAbsent(
       controllerPath,
       operation === 'command'
@@ -549,7 +599,7 @@ program
       );
     }
 
-    ensureUseCaseModuleRegistered(moduleName, useCaseName);
+    ensureUseCaseRegisteredToDomainModule(moduleName, useCaseName);
 
     if (createdFiles.length > 0) {
       await runCommand(`npx prettier --write ${createdFiles.join(' ')}`);

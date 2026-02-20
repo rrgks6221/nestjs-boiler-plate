@@ -4,12 +4,11 @@ import { faker } from '@faker-js/faker';
 
 import { UserFactory } from '@module/user/domain/__spec__/user.entity.factory';
 import { User } from '@module/user/domain/user.entity';
-import { UserRepository } from '@module/user/repositories/user/user.repository';
+import { UserRepository } from '@module/user/repositories/user.repository';
 import {
   IUserRepository,
   USER_REPOSITORY,
-} from '@module/user/repositories/user/user.repository.interface';
-import { UserRepositoryModule } from '@module/user/repositories/user/user.repository.module';
+} from '@module/user/repositories/user.repository.interface';
 
 import { generateEntityId } from '@common/base/base.entity';
 import { ClsModuleFactory } from '@common/factories/cls-module.factory';
@@ -19,7 +18,13 @@ describe(UserRepository.name, () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [ClsModuleFactory(), UserRepositoryModule],
+      imports: [ClsModuleFactory()],
+      providers: [
+        {
+          provide: USER_REPOSITORY,
+          useClass: UserRepository,
+        },
+      ],
     }).compile();
 
     repository = module.get<IUserRepository>(USER_REPOSITORY);

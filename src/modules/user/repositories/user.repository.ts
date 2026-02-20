@@ -8,7 +8,7 @@ import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-pr
 
 import { User } from '@module/user/domain/user.entity';
 import { UserMapper } from '@module/user/mappers/user.mapper';
-import { IUserRepository } from '@module/user/repositories/user/user.repository.interface';
+import { IUserRepository } from '@module/user/repositories/user.repository.interface';
 
 import { EntityId } from '@common/base/base.entity';
 import { BaseRepository } from '@common/base/base.repository';

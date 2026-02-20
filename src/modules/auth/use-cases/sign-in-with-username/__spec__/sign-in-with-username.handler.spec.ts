@@ -6,17 +6,18 @@ import { faker } from '@faker-js/faker';
 
 import { AuthTokens } from '@module/auth/entities/auth-tokens.vo';
 import { SignInfoMismatchedError } from '@module/auth/errors/sign-info-mismatched.error';
-import { AuthTokenModule } from '@module/auth/services/auth-token/auth-token.module';
+import { AuthTokenService } from '@module/auth/services/auth-token.service';
+import { AUTH_TOKEN_SERVICE } from '@module/auth/services/auth-token.service.interface';
 import { SignInWithUsernameCommandFactory } from '@module/auth/use-cases/sign-in-with-username/__spec__/sign-in-with-username.command.factory';
 import { SignInWithUsernameCommand } from '@module/auth/use-cases/sign-in-with-username/sign-in-with-username.command';
 import { SignInWithUsernameHandler } from '@module/auth/use-cases/sign-in-with-username/sign-in-with-username.handler';
 import { UserFactory } from '@module/user/domain/__spec__/user.entity.factory';
 import { UserNotFoundError } from '@module/user/errors/user-not-found.error';
+import { PasswordHasher } from '@module/user/services/password-hasher';
 import {
   IPasswordHasher,
   PASSWORD_HASHER,
-} from '@module/user/services/password-hasher/password-hasher.interface';
-import { PasswordHasherModule } from '@module/user/services/password-hasher/password-hasher.module';
+} from '@module/user/services/password-hasher.interface';
 
 import { ClsModuleFactory } from '@common/factories/cls-module.factory';
 import { ConfigModuleFactory } from '@common/factories/config-module.factory';
@@ -38,11 +39,19 @@ describe(SignInWithUsernameHandler.name, () => {
         CqrsModule,
         ConfigModuleFactory(),
         JwtModule.register({ global: true, secret: 'test' }),
-        PasswordHasherModule,
-        AuthTokenModule,
         EventStoreModule,
       ],
-      providers: [SignInWithUsernameHandler],
+      providers: [
+        SignInWithUsernameHandler,
+        {
+          provide: PASSWORD_HASHER,
+          useClass: PasswordHasher,
+        },
+        {
+          provide: AUTH_TOKEN_SERVICE,
+          useClass: AuthTokenService,
+        },
+      ],
     }).compile();
 
     handler = module.get<SignInWithUsernameHandler>(SignInWithUsernameHandler);

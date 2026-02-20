@@ -62,7 +62,7 @@ const writeFileIfAbsent = (
   console.log(`generate file ${filePath}`);
 };
 
-const generateDirs = (rootDir: string, domain: string) => {
+const generateDirs = (rootDir: string) => {
   const dirs = [
     rootDir,
     path.join(rootDir, 'assemblers'),
@@ -73,8 +73,7 @@ const generateDirs = (rootDir: string, domain: string) => {
     path.join(rootDir, 'event'),
     path.join(rootDir, 'mappers'),
     path.join(rootDir, 'repositories'),
-    path.join(rootDir, 'repositories', domain),
-    path.join(rootDir, 'repositories', domain, '__spec__'),
+    path.join(rootDir, 'repositories', '__spec__'),
     path.join(rootDir, 'use-cases'),
   ];
 
@@ -98,6 +97,7 @@ import { Module } from '@nestjs/common';
 
 @Module({
   imports: [],
+  providers: [],
 })
 export class DomainNameModule {}
 `;
@@ -108,6 +108,95 @@ export class DomainNameModule {}
     modulePath,
     created: createdFiles.includes(modulePath),
   };
+};
+
+const upsertProviderToModule = (
+  modulePath: string,
+  importLines: string[],
+  providerToken: string,
+  providerClass: string,
+) => {
+  const source = readFileSync(modulePath, 'utf8');
+  let next = source;
+
+  for (const importLine of importLines) {
+    if (!next.includes(importLine)) {
+      next = `${importLine}\n${next}`;
+    }
+  }
+
+  const providerEntry = `{\n      provide: ${providerToken},\n      useClass: ${providerClass},\n    }`;
+  const providersArrayRegex = /providers:\s*\[([\s\S]*?)\]/m;
+  const providersMatch = next.match(providersArrayRegex);
+
+  if (providersMatch !== null) {
+    const currentItemsText = providersMatch[1];
+    const alreadyRegistered =
+      currentItemsText.includes(`provide: ${providerToken}`) ||
+      currentItemsText.includes(`useClass: ${providerClass}`);
+
+    if (!alreadyRegistered) {
+      const trimmed = currentItemsText.trimEnd();
+      const hasItems = trimmed.trim().length > 0;
+      const normalized = hasItems
+        ? `${trimmed}${trimmed.trim().endsWith(',') ? '' : ','}\n    ${providerEntry},\n  `
+        : `\n    ${providerEntry},\n  `;
+
+      next = next.replace(providersArrayRegex, `providers: [${normalized}]`);
+    }
+  } else {
+    const moduleDecoratorRegex = /@Module\(\{([\s\S]*?)\}\)/m;
+    const moduleMatch = next.match(moduleDecoratorRegex);
+
+    if (moduleMatch === null) {
+      throw new Error(`Could not find @Module decorator in ${modulePath}`);
+    }
+
+    const body = moduleMatch[1];
+    const bodyTrimmedEnd = body.trimEnd();
+    const hasContent = bodyTrimmedEnd.trim().length > 0;
+    const suffix = hasContent
+      ? `${bodyTrimmedEnd}${bodyTrimmedEnd.trim().endsWith(',') ? '' : ','}\n  `
+      : '\n  ';
+    const replaced = `${suffix}providers: [\n    ${providerEntry},\n  ],\n`;
+
+    next = next.replace(moduleDecoratorRegex, `@Module({${replaced}})`);
+  }
+
+  if (next !== source) {
+    writeFileSync(modulePath, next);
+    if (!createdFiles.includes(modulePath)) {
+      createdFiles.push(modulePath);
+    }
+    console.log(`updated ${modulePath}`);
+  }
+};
+
+const ensureRepositoryRegisteredToDomainModule = (
+  dir: string,
+  domain: string,
+) => {
+  const modulePath = path.resolve(
+    process.cwd(),
+    'src',
+    'modules',
+    dir,
+    `${dir}.module.ts`,
+  );
+
+  const repositoryClass = `${pascalCase(domain)}Repository`;
+  const repositoryToken = `${snakeCase(domain).toUpperCase()}_REPOSITORY`;
+  const importLines = [
+    `import { ${repositoryClass} } from '@module/${dir}/repositories/${domain}.repository';`,
+    `import { ${repositoryToken} } from '@module/${dir}/repositories/${domain}.repository.interface';`,
+  ];
+
+  upsertProviderToModule(
+    modulePath,
+    importLines,
+    repositoryToken,
+    repositoryClass,
+  );
 };
 
 const ensureDomainModuleRegisteredToApp = (dir: string) => {
@@ -313,24 +402,6 @@ export class DomainNameMapper extends BaseMapper {
 };
 
 const generateRepository = (rootDir: string, dir: string, domain: string) => {
-  const MODULE_PRESET = `
-import { Module } from '@nestjs/common';
-
-import { DomainNameRepository } from '@module/dir-name/repositories/domain-name/domain-name.repository';
-import { DOMAIN_NAME_REPOSITORY } from '@module/dir-name/repositories/domain-name/domain-name.repository.interface';
-
-@Module({
-  providers: [
-    {
-      provide: DOMAIN_NAME_REPOSITORY,
-      useClass: DomainNameRepository,
-    },
-  ],
-  exports: [DOMAIN_NAME_REPOSITORY],
-})
-export class DomainNameRepositoryModule {}
-`;
-
   const INTERFACE_PRESET = `
 import { DomainName } from '@module/dir-name/domain/domain-name.entity';
 
@@ -353,7 +424,7 @@ import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-pr
 
 import { DomainName } from '@module/dir-name/domain/domain-name.entity';
 import { DomainNameMapper } from '@module/dir-name/mappers/domain-name.mapper';
-import { IDomainNameRepository } from '@module/dir-name/repositories/domain-name/domain-name.repository.interface';
+import { IDomainNameRepository } from '@module/dir-name/repositories/domain-name.repository.interface';
 
 import { EntityId } from '@common/base/base.entity';
 import { BaseRepository } from '@common/base/base.repository';
@@ -432,12 +503,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 
 import { DomainNameFactory } from '@module/dir-name/domain/__spec__/domain-name.entity.factory';
 import { DomainName } from '@module/dir-name/domain/domain-name.entity';
-import { DomainNameRepository } from '@module/dir-name/repositories/domain-name/domain-name.repository';
+import { DomainNameRepository } from '@module/dir-name/repositories/domain-name.repository';
 import {
   DOMAIN_NAME_REPOSITORY,
   IDomainNameRepository,
-} from '@module/dir-name/repositories/domain-name/domain-name.repository.interface';
-import { DomainNameRepositoryModule } from '@module/dir-name/repositories/domain-name/domain-name.repository.module';
+} from '@module/dir-name/repositories/domain-name.repository.interface';
 
 import { generateEntityId } from '@common/base/base.entity';
 import { ClsModuleFactory } from '@common/factories/cls-module.factory';
@@ -447,7 +517,13 @@ describe(DomainNameRepository.name, () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [ClsModuleFactory(), DomainNameRepositoryModule],
+      imports: [ClsModuleFactory()],
+      providers: [
+        {
+          provide: DOMAIN_NAME_REPOSITORY,
+          useClass: DomainNameRepository,
+        },
+      ],
     }).compile();
 
     repository = module.get<IDomainNameRepository>(DOMAIN_NAME_REPOSITORY);
@@ -529,25 +605,19 @@ describe(DomainNameRepository.name, () => {
 `;
 
   writeFileIfAbsent(
-    `${rootDir}/repositories/${domain}/${domain}.repository.module.ts`,
-    MODULE_PRESET,
-    dir,
-    domain,
-  );
-  writeFileIfAbsent(
-    `${rootDir}/repositories/${domain}/${domain}.repository.interface.ts`,
+    `${rootDir}/repositories/${domain}.repository.interface.ts`,
     INTERFACE_PRESET,
     dir,
     domain,
   );
   writeFileIfAbsent(
-    `${rootDir}/repositories/${domain}/${domain}.repository.ts`,
+    `${rootDir}/repositories/${domain}.repository.ts`,
     REPOSITORY_PRESET,
     dir,
     domain,
   );
   writeFileIfAbsent(
-    `${rootDir}/repositories/${domain}/__spec__/${domain}.repository.spec.ts`,
+    `${rootDir}/repositories/__spec__/${domain}.repository.spec.ts`,
     SPEC_PRESET,
     dir,
     domain,
@@ -570,7 +640,7 @@ program
 
     const rootDir = path.resolve(process.cwd(), 'src', 'modules', dirName);
 
-    generateDirs(rootDir, domainName);
+    generateDirs(rootDir);
     generateAssembler(rootDir, dirName, domainName);
     generateDto(rootDir, dirName, domainName);
     generateEntity(rootDir, dirName, domainName);
@@ -578,6 +648,7 @@ program
     generateRepository(rootDir, dirName, domainName);
 
     const moduleState = ensureDomainModule(dirName);
+    ensureRepositoryRegisteredToDomainModule(dirName, domainName);
     if (moduleState.created) {
       ensureDomainModuleRegisteredToApp(dirName);
     }

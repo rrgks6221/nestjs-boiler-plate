@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { Response } from 'express';
 
 import { AuthTokens } from '@module/auth/entities/auth-tokens.vo';
-import { IAuthCookieService } from '@module/auth/services/auth-cookie/auth-cookie.service.interface';
+import { IAuthCookieService } from '@module/auth/services/auth-cookie.service.interface';
 
 @Injectable()
 export class AuthCookieService implements IAuthCookieService {

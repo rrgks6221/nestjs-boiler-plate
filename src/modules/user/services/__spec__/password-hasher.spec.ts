@@ -2,12 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 
 import { faker } from '@faker-js/faker';
 
-import { PasswordHasher } from '@module/user/services/password-hasher/password-hasher';
+import { PasswordHasher } from '@module/user/services/password-hasher';
 import {
   IPasswordHasher,
   PASSWORD_HASHER,
-} from '@module/user/services/password-hasher/password-hasher.interface';
-import { PasswordHasherModule } from '@module/user/services/password-hasher/password-hasher.module';
+} from '@module/user/services/password-hasher.interface';
 
 import { ConfigModuleFactory } from '@common/factories/config-module.factory';
 
@@ -16,7 +15,13 @@ describe(PasswordHasher.name, () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [ConfigModuleFactory(), PasswordHasherModule],
+      imports: [ConfigModuleFactory()],
+      providers: [
+        {
+          provide: PASSWORD_HASHER,
+          useClass: PasswordHasher,
+        },
+      ],
     }).compile();
 
     passwordHasher = module.get<IPasswordHasher>(PASSWORD_HASHER);
