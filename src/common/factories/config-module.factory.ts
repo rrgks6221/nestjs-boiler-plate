@@ -22,11 +22,9 @@ export const ConfigModuleFactory = () => {
     isGlobal: true,
     validationSchema: Joi.object({
       [ENV_KEY.PORT]: Joi.number().port().default(3000),
-      [ENV_KEY.NODE_ENV]: Joi.string().valid(
-        'development',
-        'production',
-        'test',
-      ),
+      [ENV_KEY.NODE_ENV]: Joi.string()
+        .valid('development', 'production', 'test')
+        .default('development'),
 
       [ENV_KEY.DATABASE_URL]: Joi.string().required(),
 
