@@ -12,6 +12,7 @@ import { IUserRepository } from '@module/user/repositories/user.repository.inter
 
 import { EntityId } from '@common/base/base.entity';
 import { BaseRepository } from '@common/base/base.repository';
+import { UniqueConstraintViolationError } from '@common/base/base.error';
 
 import { PrismaService } from '@shared/prisma/prisma.service';
 
@@ -34,9 +35,23 @@ export class UserRepository
   async insert(entity: User): Promise<User> {
     const raw = UserMapper.toPersistence(entity);
 
-    await this.txHost.tx.userModel.create({
-      data: raw,
-    });
+    try {
+      await this.txHost.tx.userModel.create({
+        data: raw,
+      });
+    } catch (error) {
+      if (this.isPrismaUniqueConstraintViolation(error)) {
+        throw new UniqueConstraintViolationError(
+          {
+            modelName: 'UserModel',
+            fields: this.parsePrismaUniqueTargetFields(error),
+          },
+          error,
+        );
+      }
+
+      throw error;
+    }
 
     return entity;
   }
@@ -92,5 +107,38 @@ export class UserRepository
         id: UserMapper.toPrimaryKey(entity.id),
       },
     });
+  }
+
+  private isPrismaUniqueConstraintViolation(error: unknown): boolean {
+    if (typeof error !== 'object' || error === null) {
+      return false;
+    }
+
+    return (
+      'code' in error &&
+      typeof error.code === 'string' &&
+      error.code === 'P2002'
+    );
+  }
+
+  private parsePrismaUniqueTargetFields(error: unknown): string[] | undefined {
+    if (
+      typeof error !== 'object' ||
+      error === null ||
+      !('meta' in error) ||
+      typeof error.meta !== 'object' ||
+      error.meta === null ||
+      !('target' in error.meta)
+    ) {
+      return undefined;
+    }
+
+    const target = error.meta.target;
+
+    if (!Array.isArray(target)) {
+      return undefined;
+    }
+
+    return target.filter((field): field is string => typeof field === 'string');
   }
 }

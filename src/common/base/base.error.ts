@@ -64,3 +64,25 @@ export class InternalServerError extends BaseError {
     super(message ?? 'Internal server error', InternalServerError.CODE);
   }
 }
+
+export interface UniqueConstraintViolationMetadata {
+  modelName?: string;
+  fields?: string[];
+}
+
+export class UniqueConstraintViolationError extends BaseError {
+  static CODE = 'COMMON.UNIQUE_CONSTRAINT_VIOLATION';
+
+  constructor(
+    metadata?: UniqueConstraintViolationMetadata,
+    cause?: Error,
+    message?: string,
+  ) {
+    super(
+      message ?? 'Unique constraint violation',
+      UniqueConstraintViolationError.CODE,
+      cause,
+      metadata,
+    );
+  }
+}

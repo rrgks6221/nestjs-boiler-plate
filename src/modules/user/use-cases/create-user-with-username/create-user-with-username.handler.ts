@@ -13,6 +13,8 @@ import {
 } from '@module/user/services/password-hasher.interface';
 import { CreateUserWithUsernameCommand } from '@module/user/use-cases/create-user-with-username/create-user-with-username.command';
 
+import { UniqueConstraintViolationError } from '@common/base/base.error';
+
 @CommandHandler(CreateUserWithUsernameCommand)
 export class CreateUserWithUsernameHandler implements ICommandHandler<
   CreateUserWithUsernameCommand,
@@ -39,7 +41,15 @@ export class CreateUserWithUsernameHandler implements ICommandHandler<
       hashedPassword: await this.passwordHasher.hash(command.password),
     });
 
-    await this.userRepository.insert(user);
+    try {
+      await this.userRepository.insert(user);
+    } catch (error) {
+      if (error instanceof UniqueConstraintViolationError) {
+        throw new UserUsernameAlreadyOccupiedError();
+      }
+
+      throw error;
+    }
 
     return user;
   }
