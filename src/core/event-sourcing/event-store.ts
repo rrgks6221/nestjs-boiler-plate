@@ -82,6 +82,8 @@ export class EventStore implements IEventStore {
       events.map((event) => this.eventPublisher.publish(event)),
     );
 
+    aggregateRoot.uncommit();
+
     return events;
   }
 

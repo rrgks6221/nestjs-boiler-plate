@@ -47,11 +47,13 @@ describe(EventStore.name, () => {
         const aggregateRoot = {
           id: 1,
           getUncommittedEvents: () => [],
+          uncommit: jest.fn(),
         } as unknown as AggregateRoot<unknown>;
 
         const result = await eventStore.storeAggregateEvents(aggregateRoot);
 
         expect(result).toEqual([]);
+        expect(aggregateRoot.uncommit).not.toHaveBeenCalled();
       });
     });
 
@@ -65,6 +67,7 @@ describe(EventStore.name, () => {
         const aggregateRoot = {
           id: generateEntityId(),
           getUncommittedEvents: () => uncommittedEvents,
+          uncommit: jest.fn(),
         } as unknown as AggregateRoot<unknown>;
 
         await expect(
@@ -81,6 +84,7 @@ describe(EventStore.name, () => {
         expect(eventPublisher.publish).toHaveBeenCalledTimes(
           uncommittedEvents.length,
         );
+        expect(aggregateRoot.uncommit).toHaveBeenCalledTimes(1);
       });
     });
   });
