@@ -18,7 +18,7 @@ import {
   IAuthCookieService,
 } from '@module/auth/services/auth-cookie.service.interface';
 import { SignInWithUsernameCommand } from '@module/auth/use-cases/sign-in-with-username/sign-in-with-username.command';
-import { SignUpWithUsernameDto } from '@module/auth/use-cases/sign-up-with-username/sign-up-with-username.dto';
+import { SignInWithUsernameDto } from '@module/auth/use-cases/sign-in-with-username/sign-in-with-username.dto';
 
 import { BaseHttpException } from '@common/base/base-http-exception';
 import { RequestValidationError } from '@common/base/base.error';
@@ -51,7 +51,7 @@ export class SignInWithUsernameController {
   @Post('auth/sign-in/username')
   async signInWithUsername(
     @Res({ passthrough: true }) res: Response,
-    @Body() dto: SignUpWithUsernameDto,
+    @Body() dto: SignInWithUsernameDto,
   ): Promise<void> {
     try {
       const tokens = await this.commandBus.execute<
