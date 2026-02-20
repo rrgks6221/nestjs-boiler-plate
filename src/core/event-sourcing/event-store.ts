@@ -59,10 +59,7 @@ export class EventStore implements IEventStore {
       data: events.map((event, idx) => {
         return {
           id: BigInt(generateEntityId()),
-          actorId: actorId
-            ? BigInt(actorId)
-            : // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
-              BigInt(RequestContext.currentContext?.req?.user?.id) || undefined,
+          actorId: this.parseActorId(actorId),
           aggregate: events[0].aggregate,
           aggregateId: BigInt(event.aggregateId),
           eventName: event.eventName,
@@ -78,5 +75,24 @@ export class EventStore implements IEventStore {
     );
 
     return events;
+  }
+
+  private parseActorId(actorId?: EntityId): bigint | undefined {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const contextActorId: EntityId =
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      RequestContext.currentContext?.req?.user?.id;
+    const rawActorId = actorId ?? contextActorId;
+
+    if (rawActorId === undefined || rawActorId === null) {
+      return;
+    }
+
+    const actorIdString = String(rawActorId).trim();
+    if (!/^\d+$/.test(actorIdString)) {
+      return;
+    }
+
+    return BigInt(actorIdString);
   }
 }
