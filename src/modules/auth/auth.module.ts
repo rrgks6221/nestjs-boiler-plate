@@ -25,6 +25,11 @@ import { EventStoreModule } from '@core/event-sourcing/event-store.module';
           secret: configService.getOrThrow(ENV_KEY.JWT_SECRET),
           signOptions: {
             issuer: configService.getOrThrow(ENV_KEY.JWT_ISSUER),
+            audience: configService.getOrThrow(ENV_KEY.JWT_AUDIENCE),
+          },
+          verifyOptions: {
+            issuer: configService.getOrThrow(ENV_KEY.JWT_ISSUER),
+            audience: configService.getOrThrow(ENV_KEY.JWT_AUDIENCE),
           },
         };
       },

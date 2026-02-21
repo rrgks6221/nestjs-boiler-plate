@@ -11,6 +11,7 @@ export const ENV_KEY = {
   SALT_ROUND: 'SALT_ROUND',
   JWT_SECRET: 'JWT_SECRET',
   JWT_ISSUER: 'JWT_ISSUER',
+  JWT_AUDIENCE: 'JWT_AUDIENCE',
   ACCESS_TOKEN_EXPIRES_IN: 'ACCESS_TOKEN_EXPIRES_IN',
   REFRESH_TOKEN_EXPIRES_IN: 'REFRESH_TOKEN_EXPIRES_IN',
 
@@ -32,6 +33,7 @@ export const ConfigModuleFactory = () => {
       [ENV_KEY.SALT_ROUND]: Joi.number().required(),
       [ENV_KEY.JWT_SECRET]: Joi.string().required(),
       [ENV_KEY.JWT_ISSUER]: Joi.string().required(),
+      [ENV_KEY.JWT_AUDIENCE]: Joi.string().required(),
       [ENV_KEY.ACCESS_TOKEN_EXPIRES_IN]: Joi.string().required(),
       [ENV_KEY.REFRESH_TOKEN_EXPIRES_IN]: Joi.string().required(),
 
