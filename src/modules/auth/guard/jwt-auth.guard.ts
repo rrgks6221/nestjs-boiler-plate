@@ -10,10 +10,17 @@ import { JwtService } from '@nestjs/jwt';
 
 import { Request } from 'express';
 
+import { AuthTokenType } from '@module/auth/entities/auth-token.vo';
+
 import { BaseHttpException } from '@common/base/base-http-exception';
 import { UnauthorizedError } from '@common/base/base.error';
 
 export const Public = () => SetMetadata('isPublic', true);
+
+interface AccessTokenPayload {
+  sub: string;
+  tokenType: AuthTokenType;
+}
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
@@ -43,7 +50,15 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     try {
-      const payload = await this.jwtService.verifyAsync<{ sub: string }>(token);
+      const payload =
+        await this.jwtService.verifyAsync<AccessTokenPayload>(token);
+
+      if (payload.tokenType !== 'access') {
+        throw new BaseHttpException(
+          HttpStatus.UNAUTHORIZED,
+          new UnauthorizedError(),
+        );
+      }
 
       request['user'] = {
         id: payload.sub,

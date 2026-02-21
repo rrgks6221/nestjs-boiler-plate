@@ -45,7 +45,13 @@ export class AuthTokenService implements IAuthTokenService {
     userId: string,
     expiresIn: StringValue,
   ): AuthToken {
-    const token = this.jwtService.sign({ sub: userId }, { expiresIn });
+    const token = this.jwtService.sign(
+      {
+        sub: userId,
+        tokenType: type,
+      },
+      { expiresIn },
+    );
     const decoded = this.jwtService.decode<{ exp: number }>(token);
 
     return new AuthToken({
