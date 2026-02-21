@@ -17,7 +17,10 @@ export const ClsModuleFactory = (): DynamicModule => {
         }),
       }),
     ],
-    middleware: { mount: true },
+    middleware: {
+      mount: true,
+      generateId: true,
+    },
     global: true,
   });
 };

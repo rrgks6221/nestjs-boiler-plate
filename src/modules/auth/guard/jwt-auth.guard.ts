@@ -9,11 +9,13 @@ import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 
 import { Request } from 'express';
+import { ClsService } from 'nestjs-cls';
 
 import { AuthTokenType } from '@module/auth/entities/auth-token.vo';
 
 import { BaseHttpException } from '@common/base/base-http-exception';
 import { UnauthorizedError } from '@common/base/base.error';
+import { CLS_STORE_KEY } from '@common/constants/cls-store-key.constant';
 
 export const Public = () => SetMetadata('isPublic', true);
 
@@ -27,6 +29,7 @@ export class JwtAuthGuard implements CanActivate {
   constructor(
     private readonly jwtService: JwtService,
     private readonly reflector: Reflector,
+    private readonly clsService: ClsService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -60,6 +63,7 @@ export class JwtAuthGuard implements CanActivate {
         );
       }
 
+      this.clsService.set(CLS_STORE_KEY.ACTOR_ID, payload.sub);
       request['user'] = {
         id: payload.sub,
       };

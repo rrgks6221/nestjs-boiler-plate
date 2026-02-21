@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { RequestContext } from 'nestjs-request-context';
+import { ClsServiceManager } from 'nestjs-cls';
 
 export interface BaseSerializedError {
   message: string;
@@ -21,9 +21,8 @@ export abstract class BaseError extends Error {
   ) {
     super(message);
     Error.captureStackTrace(this, this.constructor);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-    const ctxId: string = RequestContext.currentContext?.req.id ?? randomUUID();
-    this.correlationId = ctxId;
+    this.correlationId =
+      ClsServiceManager.getClsService().getId() ?? randomUUID();
   }
 
   toJSON(): BaseSerializedError {

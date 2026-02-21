@@ -5,7 +5,7 @@ import {
   TransactionHost,
 } from '@nestjs-cls/transactional';
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma';
-import { RequestContext } from 'nestjs-request-context';
+import { ClsService } from 'nestjs-cls';
 
 import { DomainEvent } from '@common/base/base.domain-event';
 import {
@@ -14,6 +14,7 @@ import {
   generateEntityId,
 } from '@common/base/base.entity';
 import { InternalServerError } from '@common/base/base.error';
+import { CLS_STORE_KEY } from '@common/constants/cls-store-key.constant';
 
 import { PrismaService } from '@shared/prisma/prisma.service';
 
@@ -31,6 +32,7 @@ export class EventStore implements IEventStore {
       TransactionalAdapterPrisma<PrismaService>
     >,
     @Inject(EVENT_PUBLISHER) private readonly eventPublisher: IEventPublisher,
+    private readonly clsService: ClsService,
   ) {}
 
   async storeAggregateEvents(
@@ -101,10 +103,9 @@ export class EventStore implements IEventStore {
   }
 
   private parseActorId(actorId?: EntityId): bigint | undefined {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const contextActorId: EntityId =
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      RequestContext.currentContext?.req?.user?.id;
+    const contextActorId = this.clsService.get<EntityId>(
+      CLS_STORE_KEY.ACTOR_ID,
+    );
     const rawActorId = actorId ?? contextActorId;
 
     if (rawActorId === undefined || rawActorId === null) {
