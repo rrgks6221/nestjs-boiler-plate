@@ -20,6 +20,7 @@ export const ENV_KEY = {
 export const ConfigModuleFactory = () => {
   return ConfigModule.forRoot({
     isGlobal: true,
+    envFilePath: process.env.NODE_ENV === 'test' ? '.env.test' : '.env',
     validationSchema: Joi.object({
       [ENV_KEY.PORT]: Joi.number().port().default(3000),
       [ENV_KEY.NODE_ENV]: Joi.string()
