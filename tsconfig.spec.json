@@ -18,6 +18,7 @@
     "src/**/*.spec.ts",
     "src/**/*.mock.ts",
     "src/**/*.d.ts",
+    "test/**/*.ts",
     "test/**/*.d.ts"
   ],
   "files": ["test/global.d.ts"]

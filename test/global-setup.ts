@@ -1,5 +1,8 @@
 import { PostgreSqlContainer } from '@testcontainers/postgresql';
 import { exec } from 'child_process';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
 
 async function setupPostgresql() {
   const container = await new PostgreSqlContainer('postgres:16.1').start();
@@ -7,7 +10,7 @@ async function setupPostgresql() {
   process.env.DATABASE_URL = container.getConnectionUri();
 
   // Prisma migrations
-  exec('npx prisma migrate deploy');
+  await execAsync('npx prisma migrate deploy');
 
   globalThis.__POSTGRES_CONTAINER__ = container;
 }

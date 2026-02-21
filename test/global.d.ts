@@ -1,4 +1,4 @@
-// eslint-disable-next-line no-restricted-imports
+/* eslint-disable no-restricted-imports */
 import '../prisma';
 import 'jest-extended';
 import 'jest-sorted';
