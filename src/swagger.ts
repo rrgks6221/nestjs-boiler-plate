@@ -10,16 +10,7 @@ export class SwaggerConfig {
       .setTitle('nestjs cqrs boiler plate')
       .setDescription('nestjs cqrs boiler plate API')
       .setVersion('0.1')
-      .addCookieAuth(
-        'access_token',
-        {
-          description: 'Access token stored in cookies',
-          type: 'http',
-          in: 'header',
-          name: 'cookie',
-        },
-        'cookie-auth',
-      )
+      .addCookieAuth('access_token', undefined, 'cookie-auth')
       .build();
 
     const document = SwaggerModule.createDocument(app, config);

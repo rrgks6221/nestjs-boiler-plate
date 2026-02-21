@@ -1,7 +1,7 @@
 import { Controller, Get, HttpStatus, UseGuards } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
 import {
-  ApiBearerAuth,
+  ApiCookieAuth,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
@@ -26,7 +26,7 @@ export class GetUserController {
   constructor(private readonly queryBus: QueryBus) {}
 
   @ApiOperation({ summary: '내 정보 조회' })
-  @ApiBearerAuth()
+  @ApiCookieAuth('cookie-auth')
   @ApiOkResponse({ type: UserDto })
   @ApiErrorResponse({
     [HttpStatus.UNAUTHORIZED]: [UnauthorizedError],
