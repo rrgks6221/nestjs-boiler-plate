@@ -12,7 +12,7 @@ import {
 import { faker } from '@faker-js/faker';
 import request from 'supertest';
 
-interface E2ETestContext {
+export interface E2ETestContext {
   app: INestApplication;
   httpAgent: ReturnType<typeof request.agent>;
   authenticatedHttpAgent: ReturnType<typeof request.agent>;

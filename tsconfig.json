@@ -22,7 +22,8 @@
       "@module/*": ["./src/modules/*"],
       "@common/*": ["./src/common/*"],
       "@shared/*": ["./src/shared/*"],
-      "@core/*": ["./src/core/*"]
+      "@core/*": ["./src/core/*"],
+      "@test/*": ["./test/*"]
     },
     "esModuleInterop": true
   }
