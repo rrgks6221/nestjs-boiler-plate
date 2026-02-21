@@ -4,6 +4,9 @@ export class SignInfoMismatchedError extends BaseError {
   static CODE: string = 'AUTH.SIGN_INFO_MISMATCHED';
 
   constructor(message?: string) {
-    super(message ?? 'Sign info not mismatched', SignInfoMismatchedError.CODE);
+    super(
+      message ?? 'Sign-in information mismatched',
+      SignInfoMismatchedError.CODE,
+    );
   }
 }
