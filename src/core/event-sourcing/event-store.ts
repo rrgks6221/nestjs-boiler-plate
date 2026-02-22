@@ -24,6 +24,13 @@ import {
 } from '@core/event-publisher/event-publisher.interface';
 import { IEventStore } from '@core/event-sourcing/event-store.interface';
 
+/**
+ * @todo 현재 구현은 DB 트랜잭션 내부에서 이벤트를 즉시 발행합니다.
+ *       따라서 이후 트랜잭션이 롤백되면, 외부 사이드이펙트(알림/프로젝션 등)가
+ *       이미 실행된 상태가 될 수 있습니다.
+ *       보일러플레이트 단순성을 위해 유지하되, 실서비스에서는 Outbox 패턴 또는
+ *       commit 이후 발행 전략으로 대체해야합니다.
+ */
 @Injectable()
 export class EventStore implements IEventStore {
   constructor(
