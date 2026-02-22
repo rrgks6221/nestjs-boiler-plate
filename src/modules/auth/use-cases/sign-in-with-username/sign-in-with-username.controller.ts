@@ -3,6 +3,7 @@ import {
   Controller,
   HttpStatus,
   Inject,
+  Logger,
   Post,
   Res,
 } from '@nestjs/common';
@@ -27,6 +28,7 @@ import { ApiErrorResponse } from '@common/decorators/api-fail-response.decorator
 @ApiTags('auth')
 @Controller()
 export class SignInWithUsernameController {
+  private readonly logger = new Logger(SignInWithUsernameController.name);
   constructor(
     private readonly commandBus: CommandBus,
     @Inject(AUTH_COOKIE_SERVICE)

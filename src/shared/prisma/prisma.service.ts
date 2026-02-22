@@ -14,32 +14,28 @@ export class PrismaService
   implements OnModuleInit, OnModuleDestroy
 {
   constructor() {
-    const adapter = new PrismaPg({
-      connectionString: process.env[ENV_KEY.DATABASE_URL],
+    super({
+      adapter: new PrismaPg({
+        connectionString: process.env[ENV_KEY.DATABASE_URL],
+      }),
+      log: PrismaService.buildLogOption(process.env[ENV_KEY.NODE_ENV]),
     });
-    const logOption: LogDefinition[] | undefined =
-      process.env.NODE_ENV === 'test'
-        ? undefined
-        : [
-            {
-              emit: 'stdout',
-              level: 'query',
-            },
-            {
-              emit: 'stdout',
-              level: 'error',
-            },
-            {
-              emit: 'stdout',
-              level: 'info',
-            },
-            {
-              emit: 'stdout',
-              level: 'warn',
-            },
-          ];
+  }
 
-    super({ adapter, log: logOption });
+  private static buildLogOption(nodeEnv?: string): LogDefinition[] | undefined {
+    if (nodeEnv === 'test') {
+      return;
+    }
+
+    const levels: LogDefinition['level'][] =
+      nodeEnv === 'development'
+        ? ['query', 'error', 'info', 'warn']
+        : ['error', 'warn'];
+
+    return levels.map((level) => ({
+      emit: 'stdout',
+      level,
+    }));
   }
 
   async onModuleInit() {
