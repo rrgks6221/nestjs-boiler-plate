@@ -19,6 +19,7 @@ async function bootstrap() {
   setGlobalPipe(app);
   setLogger(app);
   SwaggerConfig.setup(app);
+  app.enableShutdownHooks();
 
   await app.listen(process.env.PORT ?? 3000);
 }
