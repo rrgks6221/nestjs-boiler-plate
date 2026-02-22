@@ -18,7 +18,6 @@ import {
 import { EventStoreModule } from '@core/event-sourcing/event-store.module';
 
 class TestEvent extends DomainEvent {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   readonly aggregate = 'TEST' as unknown as any;
 }
 

@@ -11,8 +11,8 @@ import { UserMapper } from '@module/user/mappers/user.mapper';
 import { IUserRepository } from '@module/user/repositories/user.repository.interface';
 
 import { EntityId } from '@common/base/base.entity';
-import { BaseRepository } from '@common/base/base.repository';
 import { UniqueConstraintViolationError } from '@common/base/base.error';
+import { BaseRepository } from '@common/base/base.repository';
 
 import { PrismaService } from '@shared/prisma/prisma.service';
 
