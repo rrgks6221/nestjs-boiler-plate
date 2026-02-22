@@ -1,0 +1,121 @@
+name: CI (lint, build & test)
+
+on:
+  push:
+    branches: ['**']
+  workflow_dispatch:
+
+jobs:
+  common-setup:
+    name: Common Setup (cache warm-up + anchor definitions)
+    runs-on: ubuntu-latest
+    steps:
+      - &step_checkout
+        name: Checkout
+        uses: actions/checkout@v4
+
+      - &step_setup_node
+        name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - &step_restore_node_modules_cache
+        name: Restore node_modules cache
+        id: cache-node_modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node22-${{ hashFiles('package-lock.json') }}
+
+      - &step_install_deps_if_cache_miss
+        name: Install deps (only if cache miss)
+        if: steps.cache-node_modules.outputs.cache-hit != 'true'
+        run: npm ci --no-audit --no-fund
+
+      - &step_generate_prisma_schema
+        name: Generate prisma schema
+        run: npx prisma generate
+
+      - name: Common setup done
+        run: echo "Common setup complete"
+
+  lint:
+    needs: common-setup
+    runs-on: ubuntu-latest
+    steps:
+      - *step_checkout
+
+      - *step_setup_node
+
+      - *step_restore_node_modules_cache
+
+      - *step_install_deps_if_cache_miss
+
+      - *step_generate_prisma_schema
+
+      - name: Lint
+        run: npm run lint
+
+  unit-test:
+    needs: common-setup
+    runs-on: ubuntu-latest
+    env: &test_job_env
+      NODE_ENV: test
+      TESTCONTAINERS_RYUK_DISABLED: 'true'
+      TESTCONTAINERS_CHECKS_DISABLE: 'true'
+    steps:
+      - *step_checkout
+
+      - *step_setup_node
+
+      - *step_restore_node_modules_cache
+
+      - *step_install_deps_if_cache_miss
+
+      - *step_generate_prisma_schema
+
+      - &step_prepare_test_env_file
+        name: Prepare test env file
+        run: cp .env.test.example .env.test
+
+      - name: Unit Test (Testcontainers will start Postgres)
+        run: npm run test
+
+  e2e-test:
+    needs: common-setup
+    runs-on: ubuntu-latest
+    env: *test_job_env
+    steps:
+      - *step_checkout
+
+      - *step_setup_node
+
+      - *step_restore_node_modules_cache
+
+      - *step_install_deps_if_cache_miss
+
+      - *step_prepare_test_env_file
+
+      - *step_generate_prisma_schema
+
+      - name: E2E Test (Testcontainers will start Postgres)
+        run: npm run test:e2e
+
+  build:
+    needs: common-setup
+    runs-on: ubuntu-latest
+    steps:
+      - *step_checkout
+
+      - *step_setup_node
+
+      - *step_restore_node_modules_cache
+
+      - *step_install_deps_if_cache_miss
+
+      - *step_generate_prisma_schema
+
+      - name: Build
+        run: npm run build
