@@ -12,6 +12,7 @@ import { ENV_KEY } from '@common/factories/config-module.factory';
 
 /**
  * @todo 적절한 저장소를 통해 refresh token을 관리하세요.
+ * @todo logout 시 refresh token revoke(또는 rotation 체계) 처리도 함께 구현하세요.
  */
 @Injectable()
 export class AuthTokenService implements IAuthTokenService {

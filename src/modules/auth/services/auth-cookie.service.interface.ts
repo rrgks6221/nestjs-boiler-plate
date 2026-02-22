@@ -6,4 +6,5 @@ export const AUTH_COOKIE_SERVICE = Symbol('AUTH_COOKIE_SERVICE');
 
 export interface IAuthCookieService {
   apply(res: Response, tokens: AuthTokens): void;
+  clear(res: Response): void;
 }

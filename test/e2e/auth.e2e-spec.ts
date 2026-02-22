@@ -1,8 +1,10 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { faker } from '@faker-js/faker';
 import {
   E2ETestContext,
   createE2ETestContext,
 } from '@test/create-e2e-test-context';
+import request from 'supertest';
 
 describe('Auth API (e2e)', () => {
   let context: E2ETestContext;
@@ -123,6 +125,45 @@ describe('Auth API (e2e)', () => {
         expect.objectContaining({
           statusCode: 403,
           code: 'AUTH.SIGN_INFO_MISMATCHED',
+        }),
+      );
+    });
+  });
+
+  describe('POST /auth/logout', () => {
+    it('로그아웃 후 인증 쿠키가 제거되어야 한다', async () => {
+      const logoutAgent = request.agent(context.app.getHttpServer());
+      const username = faker.string.nanoid(10);
+      const password = 'qwer1234';
+
+      await logoutAgent.post('/auth/sign-up/username').send({
+        username,
+        password,
+      });
+      await logoutAgent.post('/auth/sign-in/username').send({
+        username,
+        password,
+      });
+
+      const logoutResponse = await logoutAgent.post('/auth/logout');
+
+      expect(logoutResponse.status).toBe(204);
+      expect(logoutResponse.headers['set-cookie']).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining('access_token=;'),
+          expect.stringContaining('refresh_token=;'),
+          expect.stringContaining('Path=/'),
+          expect.stringContaining('Path=/auth'),
+        ]),
+      );
+
+      const meResponse = await logoutAgent.get('/users/me');
+
+      expect(meResponse.status).toBe(401);
+      expect(meResponse.body).toEqual(
+        expect.objectContaining({
+          statusCode: 401,
+          code: 'COMMON.UNAUTHORIZED',
         }),
       );
     });

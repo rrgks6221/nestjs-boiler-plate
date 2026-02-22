@@ -25,6 +25,11 @@ export class AuthCookieService implements IAuthCookieService {
     );
   }
 
+  clear(res: Response): void {
+    res.clearCookie('access_token', this.accessOptions(new Date(0)));
+    res.clearCookie('refresh_token', this.refreshOptions(new Date(0)));
+  }
+
   private accessOptions(expiresAt: Date) {
     return {
       httpOnly: true,
