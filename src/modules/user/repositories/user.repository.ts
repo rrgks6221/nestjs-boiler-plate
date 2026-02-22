@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { Injectable } from '@nestjs/common';
 
 import {
@@ -5,6 +6,7 @@ import {
   TransactionHost,
 } from '@nestjs-cls/transactional';
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma';
+import { Prisma } from 'generated/prisma/client';
 
 import { User } from '@module/user/domain/user.entity';
 import { UserMapper } from '@module/user/mappers/user.mapper';
@@ -39,21 +41,20 @@ export class UserRepository
       await this.txHost.tx.userModel.create({
         data: raw,
       });
+
+      return entity;
     } catch (error) {
-      if (this.isPrismaUniqueConstraintViolation(error)) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
         throw new UniqueConstraintViolationError(
-          {
-            modelName: 'UserModel',
-            fields: this.parsePrismaUniqueTargetFields(error),
-          },
-          error,
+          'User Unique constraint violation',
         );
       }
 
       throw error;
     }
-
-    return entity;
   }
 
   async findOneById(id: EntityId): Promise<User | undefined> {
@@ -107,38 +108,5 @@ export class UserRepository
         id: UserMapper.toPrimaryKey(entity.id),
       },
     });
-  }
-
-  private isPrismaUniqueConstraintViolation(error: unknown): boolean {
-    if (typeof error !== 'object' || error === null) {
-      return false;
-    }
-
-    return (
-      'code' in error &&
-      typeof error.code === 'string' &&
-      error.code === 'P2002'
-    );
-  }
-
-  private parsePrismaUniqueTargetFields(error: unknown): string[] | undefined {
-    if (
-      typeof error !== 'object' ||
-      error === null ||
-      !('meta' in error) ||
-      typeof error.meta !== 'object' ||
-      error.meta === null ||
-      !('target' in error.meta)
-    ) {
-      return undefined;
-    }
-
-    const target = error.meta.target;
-
-    if (!Array.isArray(target)) {
-      return undefined;
-    }
-
-    return target.filter((field): field is string => typeof field === 'string');
   }
 }

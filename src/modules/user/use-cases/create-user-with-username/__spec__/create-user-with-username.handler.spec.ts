@@ -14,7 +14,6 @@ import { CreateUserWithUsernameCommandFactory } from '@module/user/use-cases/cre
 import { CreateUserWithUsernameCommand } from '@module/user/use-cases/create-user-with-username/create-user-with-username.command';
 import { CreateUserWithUsernameHandler } from '@module/user/use-cases/create-user-with-username/create-user-with-username.handler';
 
-import { UniqueConstraintViolationError } from '@common/base/base.error';
 import { ClsModuleFactory } from '@common/factories/cls-module.factory';
 import { ConfigModuleFactory } from '@common/factories/config-module.factory';
 
@@ -78,16 +77,13 @@ describe(CreateUserWithUsernameHandler.name, () => {
   });
 
   describe('저장 시 유니크 제약조건 충돌이 발생하면', () => {
-    beforeEach(() => {
-      jest.spyOn(userRepository, 'insert').mockRejectedValue(
-        new UniqueConstraintViolationError({
-          modelName: 'UserModel',
-          fields: ['username'],
-        }),
+    beforeEach(async () => {
+      await userRepository.insert(
+        UserFactory.build({ username: command.username }),
       );
     });
 
-    it('도메인 에러로 변환해야한다.', async () => {
+    it('username이 이미 사용중이라는 에러가 발생해야한다.', async () => {
       await expect(handler.execute(command)).rejects.toThrow(
         UserUsernameAlreadyOccupiedError,
       );
