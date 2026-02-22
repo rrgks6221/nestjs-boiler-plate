@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 
 import { AuthModule } from '@module/auth/auth.module';
+import { HealthModule } from '@module/health/health.module';
 import { UserModule } from '@module/user/user.module';
 
 import { ClsModuleFactory } from '@common/factories/cls-module.factory';
@@ -17,6 +18,7 @@ import { PrismaModule } from '@shared/prisma/prisma.module';
     ClsModuleFactory(),
     CqrsModule.forRoot(),
     LoggerModule,
+    HealthModule,
     AuthModule,
     UserModule,
   ],

@@ -20,6 +20,9 @@ export const LOGGER = Symbol('LOGGER');
         return {
           pinoHttp: {
             level: LOGGER_LEVEL,
+            autoLogging: {
+              ignore: (req) => req.url?.startsWith('/health') ?? false,
+            },
             transport: IS_PRODUCTION
               ? undefined
               : {
