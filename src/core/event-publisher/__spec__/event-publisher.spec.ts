@@ -21,11 +21,8 @@ describe(EventPublisher.name, () => {
   });
 
   describe(EventPublisher.prototype.publish.name, () => {
-    beforeEach(() => {
-      jest.spyOn(eventEmitter, 'emit').mockImplementation();
-    });
-
     it('이벤트를 발행해야한다.', async () => {
+      jest.spyOn(eventEmitter, 'emitAsync').mockResolvedValue([]);
       const event = {
         eventName: 'test.event',
         data: 'test data',
@@ -33,7 +30,24 @@ describe(EventPublisher.name, () => {
 
       await expect(eventPublisher.publish(event)).resolves.toBeUndefined();
 
-      expect(eventEmitter.emit).toHaveBeenCalledWith(event.eventName, event);
+      expect(eventEmitter.emitAsync).toHaveBeenCalledWith(
+        event.eventName,
+        event,
+      );
+    });
+
+    it('이벤트 리스너 실패를 상위로 전파해야한다.', async () => {
+      const event = {
+        eventName: 'test.event',
+        data: 'test data',
+      } as unknown as DomainEvent;
+      const listenerError = new Error('listener failed');
+
+      jest.spyOn(eventEmitter, 'emitAsync').mockRejectedValue(listenerError);
+
+      await expect(eventPublisher.publish(event)).rejects.toThrow(
+        listenerError,
+      );
     });
   });
 });

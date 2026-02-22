@@ -11,11 +11,13 @@ export class EventPublisher implements IEventPublisher {
 
   constructor(private readonly eventEmitter: EventEmitter2) {}
 
-  publish(event: DomainEvent): Promise<void> {
-    this.eventEmitter.emit(event.eventName, event);
-
-    this.logger.log(`Publishing event: ${event.eventName}`);
-
-    return Promise.resolve();
+  async publish(event: DomainEvent): Promise<void> {
+    try {
+      await this.eventEmitter.emitAsync(event.eventName, event);
+      this.logger.log(`Published event: ${event.eventName}`);
+    } catch (error) {
+      this.logger.error(`Failed to publish event: ${event.eventName}`);
+      throw error;
+    }
   }
 }
