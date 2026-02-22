@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable no-restricted-imports */
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
