@@ -1,11 +1,6 @@
 import { AggregateRoot, BaseEntity, EntityId } from '@common/base/base.entity';
 
-export interface ISort<Field extends string = string> {
-  field: Field;
-  direction: 'desc' | 'asc';
-}
-
-export interface RepositoryPort<E> {
+export interface IWriteRepository<E> {
   insert(entity: E): Promise<E>;
 
   findOneById(id: EntityId): Promise<E | undefined>;
@@ -15,9 +10,9 @@ export interface RepositoryPort<E> {
   delete(entity: E): Promise<void>;
 }
 
-export abstract class BaseRepository<
+export abstract class BaseWriteRepository<
   Entity extends BaseEntity<unknown> | AggregateRoot<unknown>,
-> implements RepositoryPort<Entity> {
+> implements IWriteRepository<Entity> {
   protected abstract TABLE_NAME: string;
 
   abstract insert(entity: Entity): Promise<Entity>;
@@ -27,16 +22,4 @@ export abstract class BaseRepository<
   abstract update(entity: Entity): Promise<Entity>;
 
   abstract delete(entity: Entity): Promise<void>;
-
-  protected toOrderBy(sort?: ISort[]): Record<string, any> | undefined {
-    if (sort === undefined || sort.length === 0) {
-      return;
-    }
-
-    return sort.map(({ field, direction }) => {
-      return {
-        [field]: direction,
-      };
-    });
-  }
 }

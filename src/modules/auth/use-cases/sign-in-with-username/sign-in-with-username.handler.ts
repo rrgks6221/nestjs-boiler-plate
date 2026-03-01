@@ -1,5 +1,5 @@
 import { Inject } from '@nestjs/common';
-import { CommandHandler, ICommandHandler, QueryBus } from '@nestjs/cqrs';
+import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 
 import { Transactional } from '@nestjs-cls/transactional';
 
@@ -10,13 +10,14 @@ import {
 import { AuthTokens } from '@module/auth/entities/auth-tokens.vo';
 import { SignInfoMismatchedError } from '@module/auth/errors/sign-info-mismatched.error';
 import { SignInWithUsernameCommand } from '@module/auth/use-cases/sign-in-with-username/sign-in-with-username.command';
-import { User } from '@module/user/domain/user.entity';
-import { UserNotFoundError } from '@module/user/errors/user-not-found.error';
+import {
+  IUserWriteRepository,
+  USER_WRITE_REPOSITORY,
+} from '@module/user/repositories/user.write-repository.interface';
 import {
   IPasswordHasher,
   PASSWORD_HASHER,
 } from '@module/user/services/password-hasher.interface';
-import { GetUserByUsernameQuery } from '@module/user/use-cases/get-user-by-username/get-user-by-username.query';
 
 import {
   EVENT_STORE,
@@ -29,7 +30,8 @@ export class SignInWithUsernameHandler implements ICommandHandler<
   AuthTokens
 > {
   constructor(
-    private readonly queryBus: QueryBus,
+    @Inject(USER_WRITE_REPOSITORY)
+    private readonly userWriteRepository: IUserWriteRepository,
     @Inject(PASSWORD_HASHER)
     private readonly passwordHasher: IPasswordHasher,
     @Inject(AUTH_TOKEN_SERVICE)
@@ -40,18 +42,13 @@ export class SignInWithUsernameHandler implements ICommandHandler<
 
   @Transactional()
   async execute(command: SignInWithUsernameCommand): Promise<AuthTokens> {
-    const user = await this.queryBus
-      .execute<GetUserByUsernameQuery, User>(
-        new GetUserByUsernameQuery({
-          username: command.username,
-        }),
-      )
-      .catch((e) => {
-        if (e instanceof UserNotFoundError) {
-          throw new SignInfoMismatchedError();
-        }
-        throw e;
-      });
+    const user = await this.userWriteRepository.findOneByUsername(
+      command.username,
+    );
+
+    if (user === undefined) {
+      throw new SignInfoMismatchedError();
+    }
 
     const isPasswordMatch = await this.passwordHasher.compare(
       command.password,

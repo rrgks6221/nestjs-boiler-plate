@@ -1,4 +1,4 @@
-import { BaseEntity, EntityId } from '@common/base/base.entity';
+import { EntityId } from '@common/base/base.entity';
 
 export abstract class BaseMapper {
   static toPrimaryKey(id: string): bigint {
@@ -8,17 +8,4 @@ export abstract class BaseMapper {
   static toEntityId(rawId: bigint): EntityId {
     return rawId.toString();
   }
-}
-
-export interface IBaseMapper<
-  Entity extends BaseEntity<unknown>,
-  Raw extends { id: bigint },
-> extends BaseMapper {
-  toEntity(raw: Raw): Entity;
-
-  toPersistence(entity: Entity): Raw;
-
-  toPrimaryKey(id: EntityId): bigint;
-
-  toEntityId(rawId: bigint): EntityId;
 }

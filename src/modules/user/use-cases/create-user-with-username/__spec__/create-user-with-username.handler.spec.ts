@@ -3,11 +3,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UserFactory } from '@module/user/domain/__spec__/user.entity.factory';
 import { SignInType } from '@module/user/domain/user.entity';
 import { UserUsernameAlreadyOccupiedError } from '@module/user/errors/user-username-already-occupied.error';
-import { UserRepository } from '@module/user/repositories/user.repository';
+import { UserWriteRepository } from '@module/user/repositories/user.write-repository';
 import {
-  IUserRepository,
-  USER_REPOSITORY,
-} from '@module/user/repositories/user.repository.interface';
+  IUserWriteRepository,
+  USER_WRITE_REPOSITORY,
+} from '@module/user/repositories/user.write-repository.interface';
 import { PasswordHasher } from '@module/user/services/password-hasher';
 import { PASSWORD_HASHER } from '@module/user/services/password-hasher.interface';
 import { CreateUserWithUsernameCommandFactory } from '@module/user/use-cases/create-user-with-username/__spec__/create-user-with-username.command.factory';
@@ -20,7 +20,7 @@ import { ConfigModuleFactory } from '@common/factories/config-module.factory';
 describe(CreateUserWithUsernameHandler.name, () => {
   let handler: CreateUserWithUsernameHandler;
 
-  let userRepository: IUserRepository;
+  let userWriteRepository: IUserWriteRepository;
 
   let command: CreateUserWithUsernameCommand;
 
@@ -30,8 +30,8 @@ describe(CreateUserWithUsernameHandler.name, () => {
       providers: [
         CreateUserWithUsernameHandler,
         {
-          provide: USER_REPOSITORY,
-          useClass: UserRepository,
+          provide: USER_WRITE_REPOSITORY,
+          useClass: UserWriteRepository,
         },
         {
           provide: PASSWORD_HASHER,
@@ -43,7 +43,9 @@ describe(CreateUserWithUsernameHandler.name, () => {
     handler = module.get<CreateUserWithUsernameHandler>(
       CreateUserWithUsernameHandler,
     );
-    userRepository = module.get<IUserRepository>(USER_REPOSITORY);
+    userWriteRepository = module.get<IUserWriteRepository>(
+      USER_WRITE_REPOSITORY,
+    );
   });
 
   beforeEach(() => {
@@ -64,7 +66,7 @@ describe(CreateUserWithUsernameHandler.name, () => {
 
   describe('이미 존재하는 username으로 유저를 생성하면', () => {
     beforeEach(async () => {
-      await userRepository.insert(
+      await userWriteRepository.insert(
         UserFactory.build({ username: command.username }),
       );
     });
@@ -78,9 +80,12 @@ describe(CreateUserWithUsernameHandler.name, () => {
 
   describe('저장 시 유니크 제약조건 충돌이 발생하면', () => {
     beforeEach(async () => {
-      await userRepository.insert(
+      await userWriteRepository.insert(
         UserFactory.build({ username: command.username }),
       );
+      jest
+        .spyOn(userWriteRepository, 'findOneByUsername')
+        .mockResolvedValueOnce(undefined);
     });
 
     it('username이 이미 사용중이라는 에러가 발생해야한다.', async () => {

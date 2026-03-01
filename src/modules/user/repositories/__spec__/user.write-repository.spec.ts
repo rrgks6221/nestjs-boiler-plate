@@ -4,33 +4,33 @@ import { faker } from '@faker-js/faker';
 
 import { UserFactory } from '@module/user/domain/__spec__/user.entity.factory';
 import { User } from '@module/user/domain/user.entity';
-import { UserRepository } from '@module/user/repositories/user.repository';
+import { UserWriteRepository } from '@module/user/repositories/user.write-repository';
 import {
-  IUserRepository,
-  USER_REPOSITORY,
-} from '@module/user/repositories/user.repository.interface';
+  IUserWriteRepository,
+  USER_WRITE_REPOSITORY,
+} from '@module/user/repositories/user.write-repository.interface';
 
 import { generateEntityId } from '@common/base/base.entity';
 import { ClsModuleFactory } from '@common/factories/cls-module.factory';
 
-describe(UserRepository.name, () => {
-  let repository: IUserRepository;
+describe(UserWriteRepository.name, () => {
+  let repository: IUserWriteRepository;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [ClsModuleFactory()],
       providers: [
         {
-          provide: USER_REPOSITORY,
-          useClass: UserRepository,
+          provide: USER_WRITE_REPOSITORY,
+          useClass: UserWriteRepository,
         },
       ],
     }).compile();
 
-    repository = module.get<IUserRepository>(USER_REPOSITORY);
+    repository = module.get<IUserWriteRepository>(USER_WRITE_REPOSITORY);
   });
 
-  describe(UserRepository.prototype.insert.name, () => {
+  describe(UserWriteRepository.prototype.insert.name, () => {
     let user: User;
 
     beforeEach(() => {
@@ -43,7 +43,7 @@ describe(UserRepository.name, () => {
     });
   });
 
-  describe(UserRepository.prototype.findOneById.name, () => {
+  describe(UserWriteRepository.prototype.findOneById.name, () => {
     let user: User;
 
     beforeEach(async () => {
@@ -65,7 +65,7 @@ describe(UserRepository.name, () => {
     });
   });
 
-  describe(UserRepository.prototype.findOneByUsername.name, () => {
+  describe(UserWriteRepository.prototype.findOneByUsername.name, () => {
     let user: User;
 
     beforeEach(async () => {
@@ -89,7 +89,7 @@ describe(UserRepository.name, () => {
     });
   });
 
-  describe(UserRepository.prototype.update.name, () => {
+  describe(UserWriteRepository.prototype.update.name, () => {
     let user: User;
 
     beforeEach(async () => {
@@ -106,7 +106,7 @@ describe(UserRepository.name, () => {
     });
   });
 
-  describe(UserRepository.prototype.delete.name, () => {
+  describe(UserWriteRepository.prototype.delete.name, () => {
     let user: User;
 
     beforeEach(async () => {

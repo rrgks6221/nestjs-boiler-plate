@@ -33,7 +33,7 @@ enum SignInType {
   username
 }
 
-model UserModel {
+model UserSchema {
   id BigInt @id
 
   signInType SignInType @map("sign_in_type")

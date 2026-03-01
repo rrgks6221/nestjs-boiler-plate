@@ -1,28 +1,28 @@
 import { Inject } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 
-import { User } from '@module/user/domain/user.entity';
 import { UserNotFoundError } from '@module/user/errors/user-not-found.error';
 import {
-  IUserRepository,
-  USER_REPOSITORY,
-} from '@module/user/repositories/user.repository.interface';
+  IUserReadRepository,
+  USER_READ_REPOSITORY,
+  UserModel,
+} from '@module/user/repositories/user.read-repository.interface';
 import { GetUserQuery } from '@module/user/use-cases/get-user/get-user.query';
 
 @QueryHandler(GetUserQuery)
-export class GetUserHandler implements IQueryHandler<GetUserQuery, User> {
+export class GetUserHandler implements IQueryHandler<GetUserQuery, UserModel> {
   constructor(
-    @Inject(USER_REPOSITORY)
-    private readonly userRepository: IUserRepository,
+    @Inject(USER_READ_REPOSITORY)
+    private readonly userReadRepository: IUserReadRepository,
   ) {}
 
-  async execute(query: GetUserQuery): Promise<User> {
-    const user = await this.userRepository.findOneById(query.userId);
+  async execute(query: GetUserQuery): Promise<UserModel> {
+    const userModel = await this.userReadRepository.findOneById(query.userId);
 
-    if (user === undefined) {
+    if (userModel === undefined) {
       throw new UserNotFoundError();
     }
 
-    return user;
+    return userModel;
   }
 }

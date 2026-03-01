@@ -1,8 +1,5 @@
-import { CqrsModule, QueryBus } from '@nestjs/cqrs';
 import { JwtModule } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
-
-import { faker } from '@faker-js/faker';
 
 import { AuthTokenService } from '@module/auth-security/services/auth-token.service';
 import { AUTH_TOKEN_SERVICE } from '@module/auth-security/services/auth-token.service.interface';
@@ -12,7 +9,11 @@ import { SignInWithUsernameCommandFactory } from '@module/auth/use-cases/sign-in
 import { SignInWithUsernameCommand } from '@module/auth/use-cases/sign-in-with-username/sign-in-with-username.command';
 import { SignInWithUsernameHandler } from '@module/auth/use-cases/sign-in-with-username/sign-in-with-username.handler';
 import { UserFactory } from '@module/user/domain/__spec__/user.entity.factory';
-import { UserNotFoundError } from '@module/user/errors/user-not-found.error';
+import { UserWriteRepository } from '@module/user/repositories/user.write-repository';
+import {
+  IUserWriteRepository,
+  USER_WRITE_REPOSITORY,
+} from '@module/user/repositories/user.write-repository.interface';
 import { PasswordHasher } from '@module/user/services/password-hasher';
 import {
   IPasswordHasher,
@@ -27,7 +28,8 @@ import { EventStoreModule } from '@core/event-sourcing/event-store.module';
 describe(SignInWithUsernameHandler.name, () => {
   let handler: SignInWithUsernameHandler;
 
-  let queryBus: QueryBus;
+  let userWriteRepository: IUserWriteRepository;
+
   let passwordHasher: IPasswordHasher;
 
   let command: SignInWithUsernameCommand;
@@ -36,13 +38,16 @@ describe(SignInWithUsernameHandler.name, () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [
         ClsModuleFactory(),
-        CqrsModule,
         ConfigModuleFactory(),
         JwtModule.register({ global: true, secret: 'test' }),
         EventStoreModule,
       ],
       providers: [
         SignInWithUsernameHandler,
+        {
+          provide: USER_WRITE_REPOSITORY,
+          useClass: UserWriteRepository,
+        },
         {
           provide: PASSWORD_HASHER,
           useClass: PasswordHasher,
@@ -55,13 +60,10 @@ describe(SignInWithUsernameHandler.name, () => {
     }).compile();
 
     handler = module.get<SignInWithUsernameHandler>(SignInWithUsernameHandler);
+    userWriteRepository = module.get<IUserWriteRepository>(
+      USER_WRITE_REPOSITORY,
+    );
     passwordHasher = module.get<IPasswordHasher>(PASSWORD_HASHER);
-
-    queryBus = module.get<QueryBus>(QueryBus);
-  });
-
-  beforeEach(() => {
-    jest.spyOn(queryBus, 'execute');
   });
 
   afterEach(() => {
@@ -73,12 +75,13 @@ describe(SignInWithUsernameHandler.name, () => {
   });
 
   describe('인증정보가 일치하는 유저가 로그인하면', () => {
-    beforeEach(() => {
-      jest
-        .spyOn(queryBus, 'execute')
-        .mockResolvedValue(
-          UserFactory.build({ password: faker.internet.password() }),
-        );
+    beforeEach(async () => {
+      await userWriteRepository.insert(
+        UserFactory.build({
+          username: command.username,
+          password: command.password,
+        }),
+      );
       jest.spyOn(passwordHasher, 'compare').mockResolvedValue(true);
     });
 
@@ -90,12 +93,6 @@ describe(SignInWithUsernameHandler.name, () => {
   });
 
   describe('username과 일치하는 유저가 존재하지 않는 경우', () => {
-    beforeEach(() => {
-      jest
-        .spyOn(queryBus, 'execute')
-        .mockRejectedValue(new UserNotFoundError());
-    });
-
     it('로그인 정보가 일치하지 않는다는 에러가 발생해야한다.', async () => {
       await expect(handler.execute(command)).rejects.toThrow(
         SignInfoMismatchedError,
@@ -104,8 +101,12 @@ describe(SignInWithUsernameHandler.name, () => {
   });
 
   describe('password가 일치하지 않는 경우', () => {
-    beforeEach(() => {
-      jest.spyOn(queryBus, 'execute').mockResolvedValue(UserFactory.build());
+    beforeEach(async () => {
+      await userWriteRepository.insert(
+        UserFactory.build({
+          username: command.username,
+        }),
+      );
       jest.spyOn(passwordHasher, 'compare').mockResolvedValue(false);
     });
 

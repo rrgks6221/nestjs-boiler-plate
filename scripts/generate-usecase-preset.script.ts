@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { exec } from 'child_process';
 import { Command } from 'commander';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
@@ -344,14 +343,13 @@ const ensureUseCaseRegisteredToDomainModule = (
 const PRESETS = {
   CONTROLLER_COMMAND_PRESET: `import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
-import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiCreatedResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 
-import { DomainNameDtoAssembler } from '@module/module-name/assemblers/domain-name-dto.assembler';
 import { DomainName } from '@module/module-name/domain/domain-name.entity';
-import { DomainNameDto } from '@module/module-name/dto/domain-name.dto';
 import { UseCaseNameDto } from '@module/module-name/use-cases/use-case-name/use-case-name.dto';
 import { UseCaseNameOperationName } from '@module/module-name/use-cases/use-case-name/use-case-name.operation-name';
 
+import { CommonIdDto } from '@common/base/base.dto';
 import { RequestValidationError } from '@common/base/base.error';
 import { ApiErrorResponse } from '@common/decorators/api-fail-response.decorator';
 
@@ -361,22 +359,20 @@ export class UseCaseNameController {
   constructor(private readonly commandBus: CommandBus) {}
 
   @ApiOperation({ summary: '' })
-  @ApiOkResponse({ type: DomainNameDto })
+  @ApiCreatedResponse({ type: CommonIdDto })
   @ApiErrorResponse({
     [HttpStatus.BAD_REQUEST]: [RequestValidationError],
   })
   @HttpCode(HttpStatus.CREATED)
   @Post()
-  async useCaseName(@Body() dto: UseCaseNameDto): Promise<DomainNameDto> {
+  async useCaseName(@Body() dto: UseCaseNameDto): Promise<CommonIdDto> {
     try {
-      const domainName = await this.commandBus.execute<
+      const test = await this.commandBus.execute<
         UseCaseNameOperationName,
         DomainName
-      >(
-        new UseCaseNameOperationName(dto),
-      );
+      >(new UseCaseNameOperationName(dto));
 
-      return DomainNameDtoAssembler.convertToDto(domainName);
+      return new CommonIdDto({ id: test.id });
     } catch (error) {
       throw error;
     }
@@ -389,8 +385,8 @@ import { QueryBus } from '@nestjs/cqrs';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { DomainNameDtoAssembler } from '@module/module-name/assemblers/domain-name-dto.assembler';
-import { DomainName } from '@module/module-name/domain/domain-name.entity';
 import { DomainNameDto } from '@module/module-name/dto/domain-name.dto';
+import { DomainNameModel } from '@module/module-name/repositories/domain-name.read-repository.interface';
 import { UseCaseNameOperationName } from '@module/module-name/use-cases/use-case-name/use-case-name.operation-name';
 
 import { RequestValidationError } from '@common/base/base.error';
@@ -409,14 +405,14 @@ export class UseCaseNameController {
   @Get()
   async useCaseName(): Promise<DomainNameDto> {
     try {
-      const domainName = await this.queryBus.execute<
+      const domainNameModel = await this.queryBus.execute<
         UseCaseNameOperationName,
-        DomainName
+        DomainNameModel
       >(
         new UseCaseNameOperationName({}),
       );
 
-      return DomainNameDtoAssembler.convertToDto(domainName);
+      return DomainNameDtoAssembler.convertToDto(domainNameModel);
     } catch (error) {
       throw error;
     }
@@ -429,9 +425,9 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 
 import { DomainName } from '@module/module-name/domain/domain-name.entity';
 import {
-  DOMAIN_NAME_REPOSITORY,
-  IDomainNameRepository,
-} from '@module/module-name/repositories/domain-name.repository.interface';
+  DOMAIN_NAME_WRITE_REPOSITORY,
+  IDomainNameWriteRepository,
+} from '@module/module-name/repositories/domain-name.write-repository.interface';
 import { UseCaseNameOperationName } from '@module/module-name/use-cases/use-case-name/use-case-name.operation-name';
 
 @CommandHandler(UseCaseNameOperationName)
@@ -439,12 +435,15 @@ export class UseCaseNameHandler
   implements ICommandHandler<UseCaseNameOperationName, DomainName>
 {
   constructor(
-    @Inject(DOMAIN_NAME_REPOSITORY)
-    private readonly domainNameRepository: IDomainNameRepository,
+    @Inject(DOMAIN_NAME_WRITE_REPOSITORY)
+    private readonly domainNameWriteRepository: IDomainNameWriteRepository,
   ) {}
 
   async execute(command: UseCaseNameOperationName): Promise<DomainName> {
     void command;
+    void this.domainNameWriteRepository;
+
+    throw new Error('Not implemented');
   }
 }
 `,
@@ -452,67 +451,87 @@ export class UseCaseNameHandler
   HANDLER_QUERY_PRESET: `import { Inject } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 
-import { DomainName } from '@module/module-name/domain/domain-name.entity';
 import {
-  DOMAIN_NAME_REPOSITORY,
-  IDomainNameRepository,
-} from '@module/module-name/repositories/domain-name.repository.interface';
+  DOMAIN_NAME_READ_REPOSITORY,
+  DomainNameModel,
+  IDomainNameReadRepository,
+} from '@module/module-name/repositories/domain-name.read-repository.interface';
 import { UseCaseNameOperationName } from '@module/module-name/use-cases/use-case-name/use-case-name.operation-name';
 
 @QueryHandler(UseCaseNameOperationName)
 export class UseCaseNameHandler
-  implements IQueryHandler<UseCaseNameOperationName, DomainName>
+  implements IQueryHandler<UseCaseNameOperationName, DomainNameModel>
 {
   constructor(
-    @Inject(DOMAIN_NAME_REPOSITORY)
-    private readonly domainNameRepository: IDomainNameRepository,
+    @Inject(DOMAIN_NAME_READ_REPOSITORY)
+    private readonly domainNameReadRepository: IDomainNameReadRepository,
   ) {}
 
-  async execute(query: UseCaseNameOperationName): Promise<DomainName> {
+  async execute(query: UseCaseNameOperationName): Promise<DomainNameModel> {
     void query;
+    void this.domainNameReadRepository;
+
+    throw new Error('Not implemented');
   }
 }
 `,
 
-  HANDLER_SPEC_PRESET: `import { Test, TestingModule } from '@nestjs/testing';
+  HANDLER_COMMAND_SPEC_PRESET: `import { Test, TestingModule } from '@nestjs/testing';
 
 import {
-  DOMAIN_NAME_REPOSITORY,
-  IDomainNameRepository,
-} from '@module/module-name/repositories/domain-name.repository.interface';
-import { UseCaseNameOperationNameFactory } from '@module/module-name/use-cases/use-case-name/__spec__/use-case-name-operation-name.factory';
+  DOMAIN_NAME_WRITE_REPOSITORY,
+} from '@module/module-name/repositories/domain-name.write-repository.interface';
 import { UseCaseNameHandler } from '@module/module-name/use-cases/use-case-name/use-case-name.handler';
-import { UseCaseNameOperationName } from '@module/module-name/use-cases/use-case-name/use-case-name.operation-name';
 
 describe(UseCaseNameHandler.name, () => {
   let handler: UseCaseNameHandler;
-  let domainNameRepository: IDomainNameRepository;
-
-  let operationName: UseCaseNameOperationName;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UseCaseNameHandler,
         {
-          provide: DOMAIN_NAME_REPOSITORY,
+          provide: DOMAIN_NAME_WRITE_REPOSITORY,
           useValue: {},
         },
       ],
     }).compile();
 
     handler = module.get<UseCaseNameHandler>(UseCaseNameHandler);
-    domainNameRepository = module.get<IDomainNameRepository>(
-      DOMAIN_NAME_REPOSITORY,
-    );
   });
 
-  beforeEach(() => {
-    operationName = UseCaseNameOperationNameFactory.build();
+  it('핸들러가 정의되어야한다.', () => {
+    expect(handler).toBeDefined();
+  });
+});
+`,
+
+  HANDLER_QUERY_SPEC_PRESET: `import { Test, TestingModule } from '@nestjs/testing';
+
+import {
+  DOMAIN_NAME_READ_REPOSITORY,
+} from '@module/module-name/repositories/domain-name.read-repository.interface';
+import { UseCaseNameHandler } from '@module/module-name/use-cases/use-case-name/use-case-name.handler';
+
+describe(UseCaseNameHandler.name, () => {
+  let handler: UseCaseNameHandler;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        UseCaseNameHandler,
+        {
+          provide: DOMAIN_NAME_READ_REPOSITORY,
+          useValue: {},
+        },
+      ],
+    }).compile();
+
+    handler = module.get<UseCaseNameHandler>(UseCaseNameHandler);
   });
 
-  it('핸들러가 정의되어야한다.', async () => {
-    await expect(handler.execute(operationName)).resolves.toBeDefined();
+  it('핸들러가 정의되어야한다.', () => {
+    expect(handler).toBeDefined();
   });
 });
 `,
@@ -642,7 +661,9 @@ program
     );
     writeFileIfAbsent(
       handlerSpecPath,
-      PRESETS.HANDLER_SPEC_PRESET,
+      operation === 'command'
+        ? PRESETS.HANDLER_COMMAND_SPEC_PRESET
+        : PRESETS.HANDLER_QUERY_SPEC_PRESET,
       moduleName,
       domainName,
       useCaseName,
@@ -671,7 +692,10 @@ program
     ensureUseCaseRegisteredToDomainModule(moduleName, useCaseName);
 
     if (createdFiles.length > 0) {
-      await runCommand(`npx prettier --write ${createdFiles.join(' ')}`);
+      const formattedTargets = createdFiles
+        .map((filePath) => `"${filePath}"`)
+        .join(' ');
+      await runCommand(`npx prettier --write ${formattedTargets}`);
     }
 
     console.log(`Use case '${useCaseName}' generated successfully.`);

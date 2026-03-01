@@ -9,18 +9,18 @@ import { Prisma } from 'generated/prisma/client';
 
 import { User } from '@module/user/domain/user.entity';
 import { UserMapper } from '@module/user/mappers/user.mapper';
-import { IUserRepository } from '@module/user/repositories/user.repository.interface';
+import { IUserWriteRepository } from '@module/user/repositories/user.write-repository.interface';
 
 import { EntityId } from '@common/base/base.entity';
 import { UniqueConstraintViolationError } from '@common/base/base.error';
-import { BaseRepository } from '@common/base/base.repository';
+import { BaseWriteRepository } from '@common/base/base.write-repository';
 
 import { PrismaService } from '@shared/prisma/prisma.service';
 
 @Injectable()
-export class UserRepository
-  extends BaseRepository<User>
-  implements IUserRepository
+export class UserWriteRepository
+  extends BaseWriteRepository<User>
+  implements IUserWriteRepository
 {
   protected TABLE_NAME: string;
 
@@ -37,7 +37,7 @@ export class UserRepository
     const raw = UserMapper.toPersistence(entity);
 
     try {
-      await this.txHost.tx.userModel.create({
+      await this.txHost.tx.userSchema.create({
         data: raw,
       });
 
@@ -61,7 +61,7 @@ export class UserRepository
       return;
     }
 
-    const raw = await this.txHost.tx.userModel.findUnique({
+    const raw = await this.txHost.tx.userSchema.findUnique({
       where: {
         id: UserMapper.toPrimaryKey(id),
       },
@@ -75,7 +75,7 @@ export class UserRepository
   }
 
   async findOneByUsername(username: string): Promise<User | undefined> {
-    const raw = await this.txHost.tx.userModel.findUnique({
+    const raw = await this.txHost.tx.userSchema.findUnique({
       where: {
         username,
       },
@@ -91,7 +91,7 @@ export class UserRepository
   async update(entity: User): Promise<User> {
     const raw = UserMapper.toPersistence(entity);
 
-    await this.txHost.tx.userModel.update({
+    await this.txHost.tx.userSchema.update({
       where: {
         id: raw.id,
       },
@@ -102,7 +102,7 @@ export class UserRepository
   }
 
   async delete(entity: User): Promise<void> {
-    await this.txHost.tx.userModel.delete({
+    await this.txHost.tx.userSchema.delete({
       where: {
         id: UserMapper.toPrimaryKey(entity.id),
       },

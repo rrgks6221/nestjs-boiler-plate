@@ -98,6 +98,7 @@ import { Module } from '@nestjs/common';
 @Module({
   imports: [],
   providers: [],
+  exports: [],
 })
 export class DomainNameModule {}
 `;
@@ -125,7 +126,10 @@ const upsertProviderToModule = (
     }
   }
 
-  const providerEntry = `{\n      provide: ${providerToken},\n      useClass: ${providerClass},\n    }`;
+  const providerEntry = `{
+      provide: ${providerToken},
+      useClass: ${providerClass},
+    }`;
   const providersArrayRegex = /providers:\s*\[([\s\S]*?)\]/m;
   const providersMatch = next.match(providersArrayRegex);
 
@@ -172,7 +176,7 @@ const upsertProviderToModule = (
   }
 };
 
-const ensureRepositoryRegisteredToDomainModule = (
+const ensureReadWriteRepositoryRegisteredToDomainModule = (
   dir: string,
   domain: string,
 ) => {
@@ -184,18 +188,30 @@ const ensureRepositoryRegisteredToDomainModule = (
     `${dir}.module.ts`,
   );
 
-  const repositoryClass = `${pascalCase(domain)}Repository`;
-  const repositoryToken = `${snakeCase(domain).toUpperCase()}_REPOSITORY`;
+  const writeRepositoryClass = `${pascalCase(domain)}WriteRepository`;
+  const writeRepositoryToken = `${snakeCase(domain).toUpperCase()}_WRITE_REPOSITORY`;
+  const readRepositoryClass = `${pascalCase(domain)}ReadRepository`;
+  const readRepositoryToken = `${snakeCase(domain).toUpperCase()}_READ_REPOSITORY`;
+
   const importLines = [
-    `import { ${repositoryClass} } from '@module/${dir}/repositories/${domain}.repository';`,
-    `import { ${repositoryToken} } from '@module/${dir}/repositories/${domain}.repository.interface';`,
+    `import { ${writeRepositoryClass} } from '@module/${dir}/repositories/${domain}.write-repository';`,
+    `import { ${writeRepositoryToken} } from '@module/${dir}/repositories/${domain}.write-repository.interface';`,
+    `import { ${readRepositoryClass} } from '@module/${dir}/repositories/${domain}.read-repository';`,
+    `import { ${readRepositoryToken} } from '@module/${dir}/repositories/${domain}.read-repository.interface';`,
   ];
 
   upsertProviderToModule(
     modulePath,
     importLines,
-    repositoryToken,
-    repositoryClass,
+    writeRepositoryToken,
+    writeRepositoryClass,
+  );
+
+  upsertProviderToModule(
+    modulePath,
+    [],
+    readRepositoryToken,
+    readRepositoryClass,
   );
 };
 
@@ -246,10 +262,10 @@ const ensureDomainModuleRegisteredToApp = (dir: string) => {
 const generateAssembler = (rootDir: string, dir: string, domain: string) => {
   const PRESET = `
 import { DomainNameDto } from '@module/dir-name/dto/domain-name.dto';
-import { DomainName } from '@module/dir-name/domain/domain-name.entity';
+import { DomainNameModel } from '@module/dir-name/repositories/domain-name.read-repository.interface';
 
 export class DomainNameDtoAssembler {
-  static convertToDto(domainName: DomainName): DomainNameDto {
+  static convertToDto(domainName: DomainNameModel): DomainNameDto {
     const dto = new DomainNameDto({
       id: domainName.id,
       createdAt: domainName.createdAt,
@@ -271,9 +287,9 @@ export class DomainNameDtoAssembler {
 
 const generateDto = (rootDir: string, dir: string, domain: string) => {
   const PRESET = `
-import { BaseResponseDto } from '@common/base/base.dto';
+import { BaseViewResponseDto } from '@common/base/base.dto';
 
-export class DomainNameDto extends BaseResponseDto {}
+export class DomainNameDto extends BaseViewResponseDto {}
 `;
 
   writeFileIfAbsent(`${rootDir}/dto/${domain}.dto.ts`, PRESET, dir, domain);
@@ -315,7 +331,6 @@ export class DomainName extends BaseEntity<DomainNameProps> {
 `;
 
   const FACTORY_PRESET = `
-import { faker } from '@faker-js/faker';
 import { Factory } from 'fishery';
 
 import {
@@ -363,18 +378,15 @@ export const DomainNameFactory = Factory.define<
 
 const generateMapper = (rootDir: string, dir: string, domain: string) => {
   const PRESET = `
+import { DomainNameSchema } from 'generated/prisma/browser';
+
 import { DomainName } from '@module/dir-name/domain/domain-name.entity';
+import { DomainNameModel } from '@module/dir-name/repositories/domain-name.read-repository.interface';
 
 import { BaseMapper } from '@common/base/base.mapper';
 
-export interface DomainNameRaw {
-  id: bigint;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
 export class DomainNameMapper extends BaseMapper {
-  static toEntity(raw: DomainNameRaw): DomainName {
+  static toEntity(raw: DomainNameSchema): DomainName {
     return new DomainName({
       id: this.toEntityId(raw.id),
       createdAt: raw.createdAt,
@@ -383,7 +395,15 @@ export class DomainNameMapper extends BaseMapper {
     });
   }
 
-  static toPersistence(entity: DomainName): DomainNameRaw {
+  static toModel(raw: DomainNameSchema): DomainNameModel {
+    return {
+      id: this.toEntityId(raw.id),
+      createdAt: raw.createdAt,
+      updatedAt: raw.updatedAt,
+    };
+  }
+
+  static toPersistence(entity: DomainName): DomainNameSchema {
     return {
       id: this.toPrimaryKey(entity.id),
       createdAt: entity.createdAt,
@@ -402,18 +422,33 @@ export class DomainNameMapper extends BaseMapper {
 };
 
 const generateRepository = (rootDir: string, dir: string, domain: string) => {
-  const INTERFACE_PRESET = `
+  const WRITE_INTERFACE_PRESET = `
 import { DomainName } from '@module/dir-name/domain/domain-name.entity';
 
-import { RepositoryPort } from '@common/base/base.repository';
+import { IWriteRepository } from '@common/base/base.write-repository';
 
-export const DOMAIN_NAME_REPOSITORY = Symbol('DOMAIN_NAME_REPOSITORY');
+export const DOMAIN_NAME_WRITE_REPOSITORY = Symbol('DOMAIN_NAME_WRITE_REPOSITORY');
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface IDomainNameRepository extends RepositoryPort<DomainName> {}
+export interface IDomainNameWriteRepository extends IWriteRepository<DomainName> {}
 `;
 
-  const REPOSITORY_PRESET = `
+  const READ_INTERFACE_PRESET = `
+import { IReadRepository } from '@common/base/base.read-repository';
+
+export const DOMAIN_NAME_READ_REPOSITORY = Symbol('DOMAIN_NAME_READ_REPOSITORY');
+
+export interface DomainNameModel {
+  readonly id: string;
+  readonly createdAt: Date;
+  readonly updatedAt: Date;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface IDomainNameReadRepository extends IReadRepository<DomainNameModel> {}
+`;
+
+  const WRITE_REPOSITORY_PRESET = `
 import { Injectable } from '@nestjs/common';
 
 import {
@@ -424,17 +459,17 @@ import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-pr
 
 import { DomainName } from '@module/dir-name/domain/domain-name.entity';
 import { DomainNameMapper } from '@module/dir-name/mappers/domain-name.mapper';
-import { IDomainNameRepository } from '@module/dir-name/repositories/domain-name.repository.interface';
+import { IDomainNameWriteRepository } from '@module/dir-name/repositories/domain-name.write-repository.interface';
 
 import { EntityId } from '@common/base/base.entity';
-import { BaseRepository } from '@common/base/base.repository';
+import { BaseWriteRepository } from '@common/base/base.write-repository';
 
 import { PrismaService } from '@shared/prisma/prisma.service';
 
 @Injectable()
-export class DomainNameRepository
-  extends BaseRepository<DomainName>
-  implements IDomainNameRepository
+export class DomainNameWriteRepository
+  extends BaseWriteRepository<DomainName>
+  implements IDomainNameWriteRepository
 {
   protected TABLE_NAME: string;
 
@@ -450,11 +485,11 @@ export class DomainNameRepository
   async insert(entity: DomainName): Promise<DomainName> {
     const raw = DomainNameMapper.toPersistence(entity);
 
-    await this.txHost.tx.domainName.create({
+    await this.txHost.tx.domainNameSchema.create({
       data: raw,
     });
 
-      return entity;
+    return entity;
   }
 
   async findOneById(id: EntityId): Promise<DomainName | undefined> {
@@ -462,7 +497,7 @@ export class DomainNameRepository
       return;
     }
 
-    const raw = await this.txHost.tx.domainName.findUnique({
+    const raw = await this.txHost.tx.domainNameSchema.findUnique({
       where: {
         id: DomainNameMapper.toPrimaryKey(id),
       },
@@ -478,7 +513,7 @@ export class DomainNameRepository
   async update(entity: DomainName): Promise<DomainName> {
     const raw = DomainNameMapper.toPersistence(entity);
 
-    await this.txHost.tx.domainName.update({
+    await this.txHost.tx.domainNameSchema.update({
       where: {
         id: raw.id,
       },
@@ -489,7 +524,7 @@ export class DomainNameRepository
   }
 
   async delete(entity: DomainName): Promise<void> {
-    await this.txHost.tx.domainName.delete({
+    await this.txHost.tx.domainNameSchema.delete({
       where: {
         id: DomainNameMapper.toPrimaryKey(entity.id),
       },
@@ -498,39 +533,89 @@ export class DomainNameRepository
 }
 `;
 
-  const SPEC_PRESET = `
-import { Test, TestingModule } from '@nestjs/testing';
+  const READ_REPOSITORY_PRESET = `
+import { Inject, Injectable } from '@nestjs/common';
+
+import { DomainNameMapper } from '@module/dir-name/mappers/domain-name.mapper';
+import {
+  DomainNameModel,
+  IDomainNameReadRepository,
+} from '@module/dir-name/repositories/domain-name.read-repository.interface';
+
+import { EntityId } from '@common/base/base.entity';
+import { BaseReadRepository } from '@common/base/base.read-repository';
+
+import { PRISMA_SERVICE, PrismaService } from '@shared/prisma/prisma.service';
+
+@Injectable()
+export class DomainNameReadRepository
+  extends BaseReadRepository<DomainNameModel>
+  implements IDomainNameReadRepository
+{
+  protected TABLE_NAME: string;
+
+  constructor(
+    @Inject(PRISMA_SERVICE)
+    private readonly prismaService: PrismaService,
+  ) {
+    super();
+  }
+
+  async findOneById(id: EntityId): Promise<DomainNameModel | undefined> {
+    if (isNaN(Number(id))) {
+      return;
+    }
+
+    const raw = await this.prismaService.domainNameSchema.findUnique({
+      where: {
+        id: DomainNameMapper.toPrimaryKey(id),
+      },
+    });
+
+    if (raw === null) {
+      return;
+    }
+
+    return DomainNameMapper.toModel(raw);
+  }
+}
+`;
+
+  const WRITE_SPEC_PRESET = `
+import { Test as NestTest, TestingModule } from '@nestjs/testing';
 
 import { DomainNameFactory } from '@module/dir-name/domain/__spec__/domain-name.entity.factory';
-import { DomainName } from '@module/dir-name/domain/domain-name.entity';
-import { DomainNameRepository } from '@module/dir-name/repositories/domain-name.repository';
+import { DomainName as DomainNameEntity } from '@module/dir-name/domain/domain-name.entity';
+import { DomainNameWriteRepository } from '@module/dir-name/repositories/domain-name.write-repository';
 import {
-  DOMAIN_NAME_REPOSITORY,
-  IDomainNameRepository,
-} from '@module/dir-name/repositories/domain-name.repository.interface';
+  DOMAIN_NAME_WRITE_REPOSITORY,
+  IDomainNameWriteRepository,
+} from '@module/dir-name/repositories/domain-name.write-repository.interface';
 
 import { generateEntityId } from '@common/base/base.entity';
 import { ClsModuleFactory } from '@common/factories/cls-module.factory';
 
-describe(DomainNameRepository.name, () => {
-  let repository: IDomainNameRepository;
+describe(DomainNameWriteRepository.name, () => {
+  let repository: IDomainNameWriteRepository;
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    const module: TestingModule = await NestTest.createTestingModule({
       imports: [ClsModuleFactory()],
       providers: [
         {
-          provide: DOMAIN_NAME_REPOSITORY,
-          useClass: DomainNameRepository,
+          provide: DOMAIN_NAME_WRITE_REPOSITORY,
+          useClass: DomainNameWriteRepository,
         },
       ],
     }).compile();
 
-    repository = module.get<IDomainNameRepository>(DOMAIN_NAME_REPOSITORY);
+    repository = module.get<IDomainNameWriteRepository>(
+      DOMAIN_NAME_WRITE_REPOSITORY,
+    );
   });
 
-  describe(DomainNameRepository.prototype.insert.name, () => {
-    let domainName: DomainName;
+  describe(DomainNameWriteRepository.prototype.insert.name, () => {
+    let domainName: DomainNameEntity;
 
     beforeEach(() => {
       domainName = DomainNameFactory.build();
@@ -544,8 +629,8 @@ describe(DomainNameRepository.name, () => {
     });
   });
 
-  describe(DomainNameRepository.prototype.findOneById.name, () => {
-    let domainName: DomainName;
+  describe(DomainNameWriteRepository.prototype.findOneById.name, () => {
+    let domainName: DomainNameEntity;
 
     beforeEach(async () => {
       domainName = await repository.insert(DomainNameFactory.build());
@@ -568,8 +653,8 @@ describe(DomainNameRepository.name, () => {
     });
   });
 
-  describe(DomainNameRepository.prototype.update.name, () => {
-    let domainName: DomainName;
+  describe(DomainNameWriteRepository.prototype.update.name, () => {
+    let domainName: DomainNameEntity;
 
     beforeEach(async () => {
       domainName = await repository.insert(DomainNameFactory.build());
@@ -589,8 +674,8 @@ describe(DomainNameRepository.name, () => {
     });
   });
 
-  describe(DomainNameRepository.prototype.delete.name, () => {
-    let domainName: DomainName;
+  describe(DomainNameWriteRepository.prototype.delete.name, () => {
+    let domainName: DomainNameEntity;
 
     beforeEach(async () => {
       domainName = await repository.insert(DomainNameFactory.build());
@@ -604,21 +689,109 @@ describe(DomainNameRepository.name, () => {
 });
 `;
 
+  const READ_SPEC_PRESET = `
+import { Test as NestTest, TestingModule } from '@nestjs/testing';
+
+import { DomainNameFactory } from '@module/dir-name/domain/__spec__/domain-name.entity.factory';
+import { DomainName as DomainNameEntity } from '@module/dir-name/domain/domain-name.entity';
+import { DomainNameReadRepository } from '@module/dir-name/repositories/domain-name.read-repository';
+import {
+  DOMAIN_NAME_READ_REPOSITORY,
+  IDomainNameReadRepository,
+} from '@module/dir-name/repositories/domain-name.read-repository.interface';
+import { DomainNameWriteRepository } from '@module/dir-name/repositories/domain-name.write-repository';
+import {
+  DOMAIN_NAME_WRITE_REPOSITORY,
+  IDomainNameWriteRepository,
+} from '@module/dir-name/repositories/domain-name.write-repository.interface';
+
+import { generateEntityId } from '@common/base/base.entity';
+import { ClsModuleFactory } from '@common/factories/cls-module.factory';
+
+describe(DomainNameReadRepository.name, () => {
+  let writeRepository: IDomainNameWriteRepository;
+  let readRepository: IDomainNameReadRepository;
+
+  beforeEach(async () => {
+    const module: TestingModule = await NestTest.createTestingModule({
+      imports: [ClsModuleFactory()],
+      providers: [
+        {
+          provide: DOMAIN_NAME_WRITE_REPOSITORY,
+          useClass: DomainNameWriteRepository,
+        },
+        {
+          provide: DOMAIN_NAME_READ_REPOSITORY,
+          useClass: DomainNameReadRepository,
+        },
+      ],
+    }).compile();
+
+    writeRepository = module.get<IDomainNameWriteRepository>(
+      DOMAIN_NAME_WRITE_REPOSITORY,
+    );
+    readRepository = module.get<IDomainNameReadRepository>(
+      DOMAIN_NAME_READ_REPOSITORY,
+    );
+  });
+
+  describe(DomainNameReadRepository.prototype.findOneById.name, () => {
+    let domainName: DomainNameEntity;
+
+    beforeEach(async () => {
+      domainName = await writeRepository.insert(DomainNameFactory.build());
+    });
+
+    describe('식별자에 해당하는 리소스가 존재하는 경우', () => {
+      it('리소스를 반환해야한다.', async () => {
+        await expect(readRepository.findOneById(domainName.id)).resolves.toMatchObject({
+          id: domainName.id,
+        });
+      });
+    });
+
+    describe('식별자에 해당하는 리소스가 존재하지 않는 경우', () => {
+      it('undefined를 반환해야한다.', async () => {
+        await expect(readRepository.findOneById(generateEntityId())).resolves.toBeUndefined();
+      });
+    });
+  });
+});
+`;
+
   writeFileIfAbsent(
-    `${rootDir}/repositories/${domain}.repository.interface.ts`,
-    INTERFACE_PRESET,
+    `${rootDir}/repositories/${domain}.write-repository.interface.ts`,
+    WRITE_INTERFACE_PRESET,
     dir,
     domain,
   );
   writeFileIfAbsent(
-    `${rootDir}/repositories/${domain}.repository.ts`,
-    REPOSITORY_PRESET,
+    `${rootDir}/repositories/${domain}.read-repository.interface.ts`,
+    READ_INTERFACE_PRESET,
     dir,
     domain,
   );
   writeFileIfAbsent(
-    `${rootDir}/repositories/__spec__/${domain}.repository.spec.ts`,
-    SPEC_PRESET,
+    `${rootDir}/repositories/${domain}.write-repository.ts`,
+    WRITE_REPOSITORY_PRESET,
+    dir,
+    domain,
+  );
+  writeFileIfAbsent(
+    `${rootDir}/repositories/${domain}.read-repository.ts`,
+    READ_REPOSITORY_PRESET,
+    dir,
+    domain,
+  );
+  writeFileIfAbsent(
+    `${rootDir}/repositories/__spec__/${domain}.write-repository.spec.ts`,
+    WRITE_SPEC_PRESET,
+    dir,
+    domain,
+  );
+  writeFileIfAbsent(
+    `${rootDir}/repositories/__spec__/${domain}.read-repository.spec.ts`,
+    READ_SPEC_PRESET,
     dir,
     domain,
   );
@@ -648,13 +821,16 @@ program
     generateRepository(rootDir, dirName, domainName);
 
     const moduleState = ensureDomainModule(dirName);
-    ensureRepositoryRegisteredToDomainModule(dirName, domainName);
+    ensureReadWriteRepositoryRegisteredToDomainModule(dirName, domainName);
     if (moduleState.created) {
       ensureDomainModuleRegisteredToApp(dirName);
     }
 
     if (createdFiles.length > 0) {
-      await runCommand(`npx prettier --write ${createdFiles.join(' ')}`);
+      const formattedTargets = createdFiles
+        .map((filePath) => `"${filePath}"`)
+        .join(' ');
+      await runCommand(`npx prettier --write ${formattedTargets}`);
     }
   });
 
