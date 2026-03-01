@@ -11,9 +11,13 @@ import { JwtAuthGuard } from '@module/auth-security/guards/jwt-auth.guard';
 import { UserDtoAssembler } from '@module/user/assemblers/user-dto.assembler';
 import { User } from '@module/user/domain/user.entity';
 import { UserDto } from '@module/user/dto/user.dto';
+import { UserNotFoundError } from '@module/user/errors/user-not-found.error';
 import { GetUserQuery } from '@module/user/use-cases/get-user/get-user.query';
 
-import { UnauthorizedError } from '@common/base/base.error';
+import {
+  InternalServerError,
+  UnauthorizedError,
+} from '@common/base/base.error';
 import { ApiErrorResponse } from '@common/decorators/api-fail-response.decorator';
 import {
   CurrentUser,
@@ -34,10 +38,18 @@ export class GetUserController {
   @UseGuards(JwtAuthGuard)
   @Get('users/me')
   async getMe(@CurrentUser() currentUser: ICurrentUser): Promise<UserDto> {
-    const user = await this.queryBus.execute<GetUserQuery, User>(
-      new GetUserQuery({ userId: currentUser.id }),
-    );
+    try {
+      const user = await this.queryBus.execute<GetUserQuery, User>(
+        new GetUserQuery({ userId: currentUser.id }),
+      );
 
-    return UserDtoAssembler.convertToDto(user);
+      return UserDtoAssembler.convertToDto(user);
+    } catch (error) {
+      if (error instanceof UserNotFoundError) {
+        throw new InternalServerError(error.message);
+      }
+
+      throw error;
+    }
   }
 }
