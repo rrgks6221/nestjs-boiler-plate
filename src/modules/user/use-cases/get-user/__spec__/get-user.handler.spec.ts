@@ -8,7 +8,10 @@ import {
   USER_READ_REPOSITORY,
 } from '@module/user/repositories/user.read-repository.interface';
 import { UserWriteRepository } from '@module/user/repositories/user.write-repository';
-import { IUserWriteRepository } from '@module/user/repositories/user.write-repository.interface';
+import {
+  IUserWriteRepository,
+  USER_WRITE_REPOSITORY,
+} from '@module/user/repositories/user.write-repository.interface';
 import { GetUserQueryFactory } from '@module/user/use-cases/get-user/__spec__/get-user.query.factory';
 import { GetUserHandler } from '@module/user/use-cases/get-user/get-user.handler';
 import { GetUserQuery } from '@module/user/use-cases/get-user/get-user.query';
@@ -36,7 +39,7 @@ describe(GetUserHandler.name, () => {
           useClass: UserReadRepository,
         },
         {
-          provide: USER_READ_REPOSITORY,
+          provide: USER_WRITE_REPOSITORY,
           useClass: UserWriteRepository,
         },
       ],
@@ -44,8 +47,9 @@ describe(GetUserHandler.name, () => {
 
     handler = module.get<GetUserHandler>(GetUserHandler);
     userReadRepository = module.get<IUserReadRepository>(USER_READ_REPOSITORY);
-    userWriteRepository =
-      module.get<IUserWriteRepository>(USER_READ_REPOSITORY);
+    userWriteRepository = module.get<IUserWriteRepository>(
+      USER_WRITE_REPOSITORY,
+    );
   });
 
   beforeEach(() => {

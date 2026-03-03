@@ -9,12 +9,15 @@ import { PASSWORD_HASHER } from '@module/user/services/password-hasher.interface
 import { CreateUserWithUsernameHandler } from '@module/user/use-cases/create-user-with-username/create-user-with-username.handler';
 import { GetUserController } from '@module/user/use-cases/get-user/get-user.controller';
 import { GetUserHandler } from '@module/user/use-cases/get-user/get-user.handler';
+import { ListUsersController } from '@module/user/use-cases/list-users/list-users.controller';
+import { ListUsersHandler } from '@module/user/use-cases/list-users/list-users.handler';
 
 @Module({
-  controllers: [GetUserController],
+  controllers: [GetUserController, ListUsersController],
   providers: [
     CreateUserWithUsernameHandler,
     GetUserHandler,
+    ListUsersHandler,
     {
       provide: USER_WRITE_REPOSITORY,
       useClass: UserWriteRepository,

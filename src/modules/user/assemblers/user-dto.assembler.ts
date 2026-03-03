@@ -9,6 +9,7 @@ export class UserDtoAssembler {
       updatedAt: user.updatedAt,
     });
 
+    dto.username = user.username;
     dto.signInType = user.signInType;
 
     return dto;

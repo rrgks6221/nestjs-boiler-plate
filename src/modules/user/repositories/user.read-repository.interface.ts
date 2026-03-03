@@ -1,8 +1,17 @@
 import { SignInType } from '@module/user/domain/user.entity';
 
-import { IReadRepository } from '@common/base/base.read-repository';
+import { OffsetPage } from '@common/base/base.model';
+import {
+  IOffsetPageInfoParam,
+  IReadRepository,
+  ISort,
+} from '@common/base/base.read-repository';
 
 export const USER_READ_REPOSITORY = Symbol('USER_READ_REPOSITORY');
+
+export const USER_ORDER_FIELDS = ['id', 'createdAt'] as const;
+
+export type UserOrderField = (typeof USER_ORDER_FIELDS)[number];
 
 export interface UserModel {
   readonly id: string;
@@ -12,5 +21,24 @@ export interface UserModel {
   readonly updatedAt: Date;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface IUserReadRepository extends IReadRepository<UserModel> {}
+export interface UserPageItemModel {
+  readonly id: string;
+  readonly signInType: SignInType;
+  readonly username: string;
+  readonly createdAt: Date;
+  readonly updatedAt: Date;
+}
+
+export interface FindAllUsersOffsetPaginatedParams {
+  pageInfo: IOffsetPageInfoParam;
+  order?: ISort<UserOrderField>[];
+  filter?: {
+    username?: string;
+  };
+}
+
+export interface IUserReadRepository extends IReadRepository<UserModel> {
+  findAllOffsetPaginated(
+    params: FindAllUsersOffsetPaginatedParams,
+  ): Promise<OffsetPage<UserPageItemModel>>;
+}
