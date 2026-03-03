@@ -25,3 +25,28 @@ export class CommonIdDto {
   @ApiProperty()
   id: string;
 }
+
+export abstract class OffsetPageRequestDto {
+  abstract page: number;
+  abstract perPage: number;
+
+  get offset(): number {
+    return (this.page - 1) * this.perPage;
+  }
+}
+
+export abstract class BaseOffsetPaginationResponseDto<T> {
+  abstract data: T[];
+
+  @ApiProperty()
+  currentPage: number;
+
+  @ApiProperty()
+  perPage: number;
+
+  @ApiProperty()
+  totalCount: number;
+
+  @ApiProperty()
+  totalPages: number;
+}

@@ -5,6 +5,11 @@ export interface ISort<Field extends string = string> {
   direction: 'desc' | 'asc';
 }
 
+export interface IOffsetPageInfoParam {
+  offset: number;
+  limit: number;
+}
+
 export interface IReadRepository<M> {
   findOneById(id: EntityId): Promise<M | undefined>;
 }

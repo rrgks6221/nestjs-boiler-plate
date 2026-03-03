@@ -23,19 +23,6 @@ export type CreateEntityProps<T> = {
 
 export type TBaseEntity<T> = BaseEntity<T> | AggregateRoot<T>;
 
-export class OffsetPage<T> {
-  constructor(
-    public readonly data: T[],
-    public readonly currentPage: number,
-    public readonly perPage: number,
-    public readonly totalCount: number,
-  ) {}
-
-  get totalPages(): number {
-    return Math.ceil(this.totalCount / this.perPage);
-  }
-}
-
 export abstract class BaseEntity<T> {
   private readonly _id: EntityId;
 
